@@ -5,7 +5,7 @@
     <version>4.5.253</version>
     <title>Carousel for Zebble for Xamarin</title>
     <description>A carousel plugin for Zebble allowing the user to swipe between different views.</description>    
-    <iconUrl>https://raw.githubusercontent.com/{MyUserName}/{MyRepo}/.../Shared/Icon.png</iconUrl>
+    <iconUrl>https://raw.githubusercontent.com/Geeksltd/Zebble.Carousel/master/Shared/Icon.png</iconUrl>
     <authors>Mobile App Technologies Ltd</authors>
     <owners>Mobile App Technologies Ltd</owners>
     <copyright>Copyright ©2017 | Mobile App Technologies Ltd</copyright>
