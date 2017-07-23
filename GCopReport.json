@@ -1,0 +1,13 @@
+{
+  "Items": [
+    {
+      "Analyzer": "UnusedMethodsAnalyzer",
+      "OccurrenceCount": 104,
+      "Exceptions": {
+        "ArgumentException": "Value does not fall within the expected range.\r\n\r\nSource:\r\n"
+      },
+      "SentToServer": false,
+      "InstallationName": "PAYMON"
+    }
+  ]
+}
