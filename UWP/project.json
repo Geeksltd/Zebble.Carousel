@@ -1,7 +1,7 @@
 ﻿{
   "dependencies": {
     "Newtonsoft.Json": "9.0.1",
-    "Zebble": "4.2.342"
+    "Zebble": "4.2.345"
   },
   "frameworks": {
     "uap10.0": {}
@@ -15,12 +15,3 @@
     "win10-x64-aot": {}
   }
 }
-
-
-
-
-
-
-
-
-
