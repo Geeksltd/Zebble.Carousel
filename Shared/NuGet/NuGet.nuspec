@@ -7,9 +7,9 @@
     <description>A carousel plugin for Zebble allowing the user to swipe between different views.</description>
     <iconUrl>https://raw.githubusercontent.com/Geeksltd/Zebble.Carousel/master/Shared/Icon.png</iconUrl>
     <projectUrl>https://github.com/Geeksltd/Zebble.Carousel</projectUrl>
-    <authors>Mobile App Technologies Ltd</authors>
-    <owners>Mobile App Technologies Ltd</owners>
-    <copyright>Copyright ©2017 | Mobile App Technologies Ltd</copyright>
+    <authors>Geeks Ltd</authors>
+    <owners>Geeks Ltd</owners>
+    <copyright>Copyright ©2017 | Geeks Ltd</copyright>
     <dependencies></dependencies>
   </metadata>
   <files>
