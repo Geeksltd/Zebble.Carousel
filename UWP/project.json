@@ -1,10 +1,10 @@
 ﻿{
   "dependencies": {
     "Newtonsoft.Json": "9.0.1",
-    "Zebble": "4.2.353"
+    "Zebble": "4.2.371"
   },
   "frameworks": {
-    "uap10.0": {}
+    "uap10.0.10240": {}
   },
   "runtimes": {
     "win10-arm": {},
