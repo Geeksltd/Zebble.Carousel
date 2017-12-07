@@ -50,6 +50,8 @@
             await CreateBulletContainer();
             await ApplySelectedBullet();
 
+            ZoomStatusChanged(ZoomingStatus);
+
             Panning.Handle(OnPanning);
             PanFinished.Handle(OnPanFinished);
         }
