@@ -7,9 +7,7 @@
 
     public class Carousel : Stack
     {
-        const int DEFAULT_HEIGHT = 300;
-        const int VELOCITY_VALUE = 30;
-        const int ACCEPTED_PAN_VALUE = 30;
+        const int DEFAULT_HEIGHT = 300, VELOCITY_VALUE = 30, ACCEPTED_PAN_VALUE = 30;
         const float HALF_SECOUND = 0.5f;
 
         int CurrentSlideIndex;
