@@ -26,6 +26,7 @@
     <DefineConstants>TRACE;DEBUG;ANDROID</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\lib\Zebble.Carousel.Android.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -42,7 +43,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Zebble.Android, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Zebble.4.2.371\lib\MonoAndroid10\Zebble.Android.dll</HintPath>
+      <HintPath>..\packages\Zebble.4.3.100\lib\MonoAndroid10\Zebble.Android.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
