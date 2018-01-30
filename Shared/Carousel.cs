@@ -185,7 +185,7 @@
             {
                 var slide = child as Slide;
                 if (slide == null) continue;
-                //slide.EnableZooming = value;
+                slide.EnableZooming = value;
             }
         }
 
@@ -295,7 +295,7 @@
             }
         }
 
-        public class Slide : Stack { }
+        public class Slide : ScrollView { }
 
         public class Bullet : Canvas { }
     }
