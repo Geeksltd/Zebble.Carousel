@@ -10,6 +10,7 @@
         const int DEFAULT_HEIGHT = 300, VELOCITY_VALUE = 30, ACCEPTED_PAN_VALUE = 30;
         const float HALF_SECOUND = 0.5f;
 
+        float? slideWidth;
         int CurrentSlideIndex;
         float CurrentXPosition;
         public readonly CarouselSlides Slides;
@@ -30,14 +31,32 @@
             }
         }
 
+        public float? SlideWidth
+        {
+            get => slideWidth;
+            set
+            {
+                slideWidth = value;
+                SlidesContainer.CurrentChildren.Do(x => x.Width(slideWidth));
+            }
+        }
+
         public Carousel()
         {
             Height.Set(DEFAULT_HEIGHT);
             BulletsContainer = new Stack(RepeatDirection.Horizontal).Id("BulletsContainer").Absolute();
             SlidesContainer = new Stack(RepeatDirection.Horizontal).Id("SlidesContainer").Height(100.Percent());
             Slides = new CarouselSlides(this);
+        }
 
-            Width.Changed.HandleWith(CarouselWidthChanged);
+        public override async Task<TView> Add<TView>(TView child, bool awaitNative = false)
+        {
+            if (child.IsAnyOf(BulletsContainer, SlidesContainer))
+                await base.Add(child, awaitNative);
+            else
+                await AddSlide(child);
+
+            return child;
         }
 
         public override async Task OnInitializing()
@@ -47,6 +66,8 @@
             await Add(SlidesContainer);
             await CreateBulletContainer();
             await ApplySelectedBullet();
+
+            await WhenShown(() => ApplySelectedWithoutAnimation(0, 0));
 
             ZoomStatusChanged(ZoomingStatus);
 
@@ -69,7 +90,6 @@
             LastDirection = newDirection;
 
             PanningDuration = LocalTime.Now;
-            Device.Log.Warning(PanningDuration);
 
             await Task.CompletedTask;
         }
@@ -157,19 +177,19 @@
 
             PositionBullets();
 
-            SlidesContainer.Width(SlidesContainer.CurrentChildren.Count() * ActualWidth);
+            SlidesContainer.Width(SlidesContainer.CurrentChildren.Count() * InternalSlideWidth);
         }
+
+        float InternalSlideWidth => SlideWidth ?? ActualWidth;
 
         void PositionBullets()
         {
             BulletsContainer.Y.BindTo(Height, BulletsContainer.Height, BulletsContainer.Margin.Bottom, (x, y, mb) => x - y - mb);
         }
 
-        void CarouselWidthChanged() => SlidesContainer.AllChildren.Do(x => x.Width(ActualWidth));
-
         public async Task<Slide> AddSlide(View child)
         {
-            var slide = new Slide().Set(x => x.Width.BindTo(Width));
+            var slide = new Slide().Width(InternalSlideWidth);
 
             await slide.Add(child);
             await SlidesContainer.Add(slide);
@@ -202,7 +222,7 @@
             }
             else
             {
-                await ApplySlectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
+                await ApplySelectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
             }
         }
 
@@ -219,7 +239,7 @@
             }
             else
             {
-                await ApplySlectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
+                await ApplySelectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
             }
         }
 
@@ -233,23 +253,32 @@
             }
             else
             {
-                await ApplySlectedWithoutAnimation(CurrentSlideIndex, CurrentSlideIndex);
+                await ApplySelectedWithoutAnimation(CurrentSlideIndex, CurrentSlideIndex);
             }
         }
 
-        async Task ApplySlectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
+        async Task ApplySelectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
         {
-            float xPosintion = 0;
-            if (currentSlideIndex == 0 && oldSlideIndex == 0)
-                xPosintion = 0;
-            else if (currentSlideIndex == oldSlideIndex)
-                xPosintion = -(currentSlideIndex * ActualWidth);
-            else if (currentSlideIndex > 0)
-                xPosintion = -(currentSlideIndex * ActualWidth);
-            SlidesContainer.X(xPosintion);
+            //float xPosintion = 0;
+            //if (currentSlideIndex == 0 && oldSlideIndex == 0)
+            //    xPosintion = 0;
+            //else if (currentSlideIndex == oldSlideIndex)
+            //    xPosintion = -(currentSlideIndex * InternalSlideWidth);
+            //else if (currentSlideIndex > 0)
+            //    xPosintion = -(currentSlideIndex * InternalSlideWidth);
+            //SlidesContainer.X(xPosintion);
+
+            SlidesContainer.X(XPositionOffset - currentSlideIndex * InternalSlideWidth);
+
+            //var slides = SlidesContainer.AllChildren<Slide>().ToList();
+            //await Task.WhenAll(
+            //    slides[currentSlideIndex].SetPseudoCssState("active", set: true),
+            //    slides[oldSlideIndex].SetPseudoCssState("active", set: false));
 
             await ApplySelectedBullet();
         }
+
+        float XPositionOffset => (ActualWidth - InternalSlideWidth) / 2;
 
         void ApplySelectedBulletAnimation(int oldBulletIndex, int currentBulletIndex)
         {
@@ -257,14 +286,16 @@
             var oldBullet = bullets[oldBulletIndex];
             var currentBullet = bullets[currentBulletIndex];
 
-            float xPosintion = 0;
-            if (currentBulletIndex == 0 && oldBulletIndex == 0)
-                xPosintion = 0;
-            else if (currentBulletIndex == oldBulletIndex)
-                xPosintion = -(currentBulletIndex * ActualWidth);
-            else if (currentBulletIndex > 0)
-                xPosintion = -(currentBulletIndex * ActualWidth);
-            SlidesContainer.X(xPosintion);
+            //float xPosintion = 0;
+            //if (currentBulletIndex == 0 && oldBulletIndex == 0)
+            //    xPosintion = 0;
+            //else if (currentBulletIndex == oldBulletIndex)
+            //    xPosintion = -(currentBulletIndex * InternalSlideWidth);
+            //else if (currentBulletIndex > 0)
+            //    xPosintion = -(currentBulletIndex * InternalSlideWidth);
+            //SlidesContainer.X(xPosintion);
+
+            SlidesContainer.X(XPositionOffset - currentBulletIndex * InternalSlideWidth);
 
             oldBullet.SetPseudoCssState("active", set: false).RunInParallel();
             currentBullet.SetPseudoCssState("active", set: true).RunInParallel();
