@@ -7,7 +7,15 @@
 
     public class Carousel : Stack
     {
-        const int DEFAULT_HEIGHT = 300, VELOCITY_VALUE = 30, ACCEPTED_PAN_VALUE = 30;
+        const int DEFAULT_HEIGHT = 300, ACCEPTED_PAN_VALUE = 30;
+#if ANDROID
+        const int VELOCITY_VALUE = 300;
+#elif UWP
+        const int VELOCITY_VALUE = 1;
+#elif IOS
+        const int VELOCITY_VALUE = 30;
+#endif
+
         const float HALF_SECOUND = 0.5f;
 
         float? slideWidth;
@@ -77,56 +85,33 @@
 
         async Task OnPanning(PannedEventArgs args)
         {
+            if (Slides.Zoomed) return;
+
             var difference = args.From.X - args.To.X;
             SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
-            if (CurrentSlideIndex > 0)
-                CurrentXPosition = Math.Abs(SlidesContainer.X.CurrentValue) - (ActualWidth * CurrentSlideIndex);
-            else
-                CurrentXPosition = Math.Abs(SlidesContainer.X.CurrentValue);
-
-            var newDirection = await CheckDirection(args.Velocity);
-            if (LastDirection.HasValue && LastDirection != newDirection)
-                DirectionHasChanged = true;
-            LastDirection = newDirection;
-
-            PanningDuration = LocalTime.Now;
-
-            await Task.CompletedTask;
         }
 
         async Task OnPanFinished(PannedEventArgs args)
         {
             if (Slides.Zoomed) return;
-
-            if (PanningDuration.HasValue && LocalTime.Now.Subtract(PanningDuration.Value).TotalSeconds > HALF_SECOUND)
-            {
-                await StayOnCurrent();
-                return;
-            }
-
-            var accepted = Math.Abs(CurrentXPosition) >= ACCEPTED_PAN_VALUE;
+                        
             var velocity = Math.Abs(args.Velocity.X);
-            if (accepted && args.Velocity.X >= VELOCITY_VALUE && !DirectionHasChanged)
-            {
-                await DoMove(args.Velocity);
-            }
-            else if (accepted && LastDirection.HasValue &&
-                (LastDirection == Zebble.Direction.Left || LastDirection == Zebble.Direction.Right) && !DirectionHasChanged)
-            {
-                await DoMove(args.Velocity, withLastMove: true);
-            }
-            else if (accepted && DirectionHasChanged)
-            {
-                await StayOnCurrent();
-            }
-            else
-            {
-                await StayOnCurrent();
-            }
 
-            DirectionHasChanged = false;
-            PanningDuration = null;
-            LastDirection = null;
+            if (velocity >= VELOCITY_VALUE)
+                await DoMove(args.Velocity);
+            else 
+                await StayOnBestMatch();
+        }
+
+        async Task StayOnBestMatch()
+        {
+            var index = -(int)Math.Round((SlidesContainer.ActualX - XPositionOffset) / InternalSlideWidth);
+
+            if (index < 0) index = 0;
+            if (index > Slides.Count - 1) index = Slides.Count - 1;
+
+            await SlidesContainer.Animate(t => ApplySelectedBulletAnimation(CurrentSlideIndex, index));
+            CurrentSlideIndex = index;
         }
 
         async Task DoMove(Point velocity, bool withLastMove = false)
@@ -242,38 +227,10 @@
                 await ApplySelectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
             }
         }
-
-        public async Task StayOnCurrent(bool animate = true)
-        {
-            if (CurrentSlideIndex <= 0) CurrentSlideIndex = 0;
-
-            if (animate)
-            {
-                SlidesContainer.Animate(t => ApplySelectedBulletAnimation(CurrentSlideIndex, CurrentSlideIndex)).RunInParallel();
-            }
-            else
-            {
-                await ApplySelectedWithoutAnimation(CurrentSlideIndex, CurrentSlideIndex);
-            }
-        }
-
+        
         async Task ApplySelectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
         {
-            //float xPosintion = 0;
-            //if (currentSlideIndex == 0 && oldSlideIndex == 0)
-            //    xPosintion = 0;
-            //else if (currentSlideIndex == oldSlideIndex)
-            //    xPosintion = -(currentSlideIndex * InternalSlideWidth);
-            //else if (currentSlideIndex > 0)
-            //    xPosintion = -(currentSlideIndex * InternalSlideWidth);
-            //SlidesContainer.X(xPosintion);
-
             SlidesContainer.X(XPositionOffset - currentSlideIndex * InternalSlideWidth);
-
-            //var slides = SlidesContainer.AllChildren<Slide>().ToList();
-            //await Task.WhenAll(
-            //    slides[currentSlideIndex].SetPseudoCssState("active", set: true),
-            //    slides[oldSlideIndex].SetPseudoCssState("active", set: false));
 
             await ApplySelectedBullet();
         }
@@ -285,15 +242,6 @@
             var bullets = BulletsContainer.AllChildren<Bullet>().ToList();
             var oldBullet = bullets[oldBulletIndex];
             var currentBullet = bullets[currentBulletIndex];
-
-            //float xPosintion = 0;
-            //if (currentBulletIndex == 0 && oldBulletIndex == 0)
-            //    xPosintion = 0;
-            //else if (currentBulletIndex == oldBulletIndex)
-            //    xPosintion = -(currentBulletIndex * InternalSlideWidth);
-            //else if (currentBulletIndex > 0)
-            //    xPosintion = -(currentBulletIndex * InternalSlideWidth);
-            //SlidesContainer.X(xPosintion);
 
             SlidesContainer.X(XPositionOffset - currentBulletIndex * InternalSlideWidth);
 
