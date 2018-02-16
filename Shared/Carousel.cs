@@ -28,6 +28,9 @@
         DateTime? PanningDuration;
 
         bool ZoomingStatus, DirectionHasChanged;
+
+        public bool CenterAligned { get; set; } = true;
+
         public bool EnableZooming
         {
             get { return ZoomingStatus; }
@@ -162,8 +165,10 @@
 
             PositionBullets();
 
-            SlidesContainer.Width(SlidesContainer.CurrentChildren.Count() * InternalSlideWidth);
+            SetContainerWidth();
         }
+
+        void SetContainerWidth() => SlidesContainer.Width(SlidesContainer.CurrentChildren.Count() * InternalSlideWidth);
 
         float InternalSlideWidth => SlideWidth ?? ActualWidth;
 
@@ -179,6 +184,9 @@
             await slide.Add(child);
             await SlidesContainer.Add(slide);
             await AddBullet();
+
+            SetContainerWidth();
+
             return slide;
         }
 
@@ -235,7 +243,7 @@
             await ApplySelectedBullet();
         }
 
-        float XPositionOffset => (ActualWidth - InternalSlideWidth) / 2;
+        float XPositionOffset => CenterAligned ? (ActualWidth - InternalSlideWidth) / 2 : 0;
 
         void ApplySelectedBulletAnimation(int oldBulletIndex, int currentBulletIndex)
         {
