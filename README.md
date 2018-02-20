@@ -5,7 +5,7 @@
 
 ![logo]
 
-Carousel class allows the user to swipe from side to side to navigate through views, like a gallery slider.
+Carousel plugin allows the user to swipe from side to side to navigate through views, like a gallery slider.
 
 
 [![NuGet](https://img.shields.io/nuget/v/Zebble.Carousel.svg?label=NuGet)](https://www.nuget.org/packages/Zebble.Carousel/)
@@ -42,7 +42,11 @@ MyCarousel.AddSlide(new Canvas());
 You can style the Carousel-Bullet and it's active state like this:
 
 ```css
-Carousel-Bullet{ background-color:#eee;  &:active{ background-color:#333; } }
+Carousel-Bullet{ 
+	background-color:#eee;
+	  &:active{ background-color:#333; 
+	  } 
+	}
 ```
 
 #### Dynamic data source
