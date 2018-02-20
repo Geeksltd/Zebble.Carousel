@@ -10,9 +10,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Carousel.cs" />
-    <None Include="$(MSBuildThisFileDirectory)Icon.png" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\CreatePackage.bat" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\NuGet.exe" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\NuGet.nuspec" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)NuGet\Icon.png" />
   </ItemGroup>
 </Project>
