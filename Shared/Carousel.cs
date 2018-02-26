@@ -248,6 +248,9 @@
         void ApplySelectedBulletAnimation(int oldBulletIndex, int currentBulletIndex)
         {
             var bullets = BulletsContainer.AllChildren<Bullet>().ToList();
+
+            if (bullets.Count == 0) return;
+
             var oldBullet = bullets[oldBulletIndex];
             var currentBullet = bullets[currentBulletIndex];
 
