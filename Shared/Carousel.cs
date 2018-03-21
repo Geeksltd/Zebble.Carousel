@@ -55,7 +55,7 @@
         public Carousel()
         {
             Height.Set(DEFAULT_HEIGHT);
-            BulletsContainer = new Stack(RepeatDirection.Horizontal).Id("BulletsContainer").Absolute();
+            BulletsContainer = new Stack(RepeatDirection.Horizontal).Id("BulletsContainer").Absolute().Visible(value: false);
             SlidesContainer = new Stack(RepeatDirection.Horizontal).Id("SlidesContainer").Height(100.Percent());
             Slides = new CarouselSlides(this);
         }
@@ -157,7 +157,13 @@
                   .FirstOrDefault()?.SetPseudoCssState("active", set: true)).OrCompleted();
         }
 
-        Task AddBullet() => BulletsContainer.Add(new Bullet());
+        async Task AddBullet()
+        {
+            await BulletsContainer.Add(new Bullet());
+
+            if (!BulletsContainer.Visible && BulletsContainer.CurrentChildren.Count() > 1)
+                BulletsContainer.Visible(value: true);
+        }
 
         public override async Task OnPreRender()
         {
