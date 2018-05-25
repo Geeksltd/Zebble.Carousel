@@ -7,7 +7,7 @@
 
     public class Carousel : Stack
     {
-        const int DEFAULT_HEIGHT = 300, ACCEPTED_PAN_VALUE = 30;
+        const int DEFAULT_HEIGHT = 300, ACCEPTED_PAN_VALUE = 5;
 #if ANDROID
         const int VELOCITY_VALUE = 300;
 #elif UWP
@@ -91,18 +91,22 @@
             if (Slides.Zoomed) return;
 
             var difference = args.From.X - args.To.X;
+
+            if (Math.Abs(difference) > ACCEPTED_PAN_VALUE)
+                LastDirection = difference > 0 ? Zebble.Direction.Left : Zebble.Direction.Right;
+
             SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
         }
 
         async Task OnPanFinished(PannedEventArgs args)
         {
             if (Slides.Zoomed) return;
-                        
+
             var velocity = Math.Abs(args.Velocity.X);
 
             if (velocity >= VELOCITY_VALUE)
-                await DoMove(args.Velocity);
-            else 
+                await DoMove(args.Velocity, true);
+            else
                 await StayOnBestMatch();
         }
 
@@ -128,7 +132,7 @@
             }
             else
             {
-                direction = await CheckDirection(velocity);
+                direction = await GetDirection(velocity);
                 if (direction == Zebble.Direction.Right) await Previous();
                 else if (direction == Zebble.Direction.Left) await Next();
             }
@@ -136,7 +140,7 @@
             await Task.CompletedTask;
         }
 
-        Task<Direction?> CheckDirection(Point velocity)
+        Task<Direction?> GetDirection(Point velocity)
         {
             Direction? result;
             if (velocity.X > 0) result = Zebble.Direction.Right;
@@ -241,7 +245,7 @@
                 await ApplySelectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
             }
         }
-        
+
         async Task ApplySelectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
         {
             SlidesContainer.X(XPositionOffset - currentSlideIndex * InternalSlideWidth);
