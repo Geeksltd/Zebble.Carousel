@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
     <id>Zebble.Carousel</id>
-    <version>4.5.274</version>
+    <version>4.5.275</version>
     <title>Carousel for Zebble (Xamarin)</title>
     <description>A Carousel plugin for Zebble allowing the user to swipe between different views.</description>
     <iconUrl>https://raw.githubusercontent.com/Geeksltd/Zebble.Carousel/master/Shared/NuGet/Icon.png</iconUrl>
