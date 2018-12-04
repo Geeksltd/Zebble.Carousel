@@ -200,6 +200,26 @@
             return slide;
         }
 
+        public async Task RemoveSlide(View child)
+        {
+            if (child.Parent == null)
+            {
+                Device.Log.Error("[Carousel Slide] the current child is not exist in the specefic carousel");
+                return;
+            }
+
+            await SlidesContainer.Remove(child.Parent);
+
+            var bullet = BulletsContainer.CurrentChildren.LastOrDefault();
+            if (bullet != null)
+                await BulletsContainer.Remove(bullet);
+
+            if (!BulletsContainer.Visible && BulletsContainer.CurrentChildren.Count() > 1)
+                BulletsContainer.Visible(value: true);
+
+            SetContainerWidth();
+        }
+
         void ZoomStatusChanged(bool value)
         {
             if (SlidesContainer == null || SlidesContainer.CurrentChildren.None()) return;
