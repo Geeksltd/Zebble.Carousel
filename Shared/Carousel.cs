@@ -20,14 +20,14 @@
 
         float? slideWidth;
         int CurrentSlideIndex;
-        float CurrentXPosition;
+        readonly float CurrentXPosition;
         public readonly CarouselSlides Slides;
         public readonly Stack BulletsContainer;
         readonly Stack SlidesContainer;
         Direction? LastDirection;
-        DateTime? PanningDuration;
-
-        bool ZoomingStatus, DirectionHasChanged;
+        readonly DateTime? PanningDuration;
+        private bool ZoomingStatus;
+        private readonly bool DirectionHasChanged;
 
         public bool CenterAligned { get; set; } = true;
 
@@ -195,9 +195,20 @@
             await SlidesContainer.Add(slide);
             await AddBullet();
 
+            HandleVisibility(child, slide);
+
             SetContainerWidth();
 
             return slide;
+        }
+
+        void HandleVisibility(View child, Slide slide)
+        {
+            slide.Ignored = child.Ignored;
+            slide.Visible = child.Visible;
+
+            child.IgnoredChanged.Handle(() => slide.Ignored = child.Ignored);
+            child.VisibilityChanged.Handle(() => slide.Visible = child.Visible);
         }
 
         public async Task RemoveSlide(View child)
