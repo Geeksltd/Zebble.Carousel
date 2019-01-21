@@ -250,14 +250,7 @@
 
             if (CurrentSlideIndex >= Slides.Count - 1) CurrentSlideIndex = Slides.Count - 1;
 
-            if (animate)
-            {
-                SlidesContainer.Animate(c => ApplySelectedBulletAnimation(oldSlideIndex, CurrentSlideIndex)).RunInParallel();
-            }
-            else
-            {
-                await ApplySelectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
-            }
+            await MoveSlide(animate, oldSlideIndex);
         }
 
         public async Task Previous(bool animate = true)
@@ -267,9 +260,30 @@
 
             if (CurrentSlideIndex <= 0) CurrentSlideIndex = 0;
 
+            await MoveSlide(animate, oldSlideIndex);
+        }
+
+        public async Task ShowFirst(bool animate = true)
+        {
+            var oldSlideIndex = CurrentSlideIndex;
+            CurrentSlideIndex = 0;
+
+            await MoveSlide(animate, oldSlideIndex);
+        }
+
+        public async Task ShowLast(bool animate = true)
+        {
+            var oldSlideIndex = CurrentSlideIndex;
+            CurrentSlideIndex = Slides.Count - 1;
+
+            await MoveSlide(animate, oldSlideIndex);
+        }
+
+        async Task MoveSlide(bool animate, int oldSlideIndex)
+        {
             if (animate)
             {
-                SlidesContainer.Animate(t => ApplySelectedBulletAnimation(oldSlideIndex, CurrentSlideIndex)).RunInParallel();
+                SlidesContainer.Animate(c => ApplySelectedBulletAnimation(oldSlideIndex, CurrentSlideIndex)).RunInParallel();
             }
             else
             {
