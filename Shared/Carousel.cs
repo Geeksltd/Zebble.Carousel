@@ -207,7 +207,12 @@
             slide.Ignored = child.Ignored;
             slide.Visible = child.Visible;
 
-            child.IgnoredChanged.Handle(() => slide.Ignored = child.Ignored);
+            child.IgnoredChanged.Handle(() =>
+            {
+                slide.Ignored = child.Ignored;
+                SetContainerWidth();
+            });
+
             child.VisibilityChanged.Handle(() => slide.Visible = child.Visible);
         }
 
