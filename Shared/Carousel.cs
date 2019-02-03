@@ -1,11 +1,10 @@
 ﻿namespace Zebble.Plugin
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
 
-    public class Carousel : Stack
+    public partial class Carousel : Stack
     {
         const int DEFAULT_HEIGHT = 300, ACCEPTED_PAN_VALUE = 5;
 #if ANDROID
@@ -48,7 +47,7 @@
             set
             {
                 slideWidth = value;
-                SlidesContainer.CurrentChildren.Do(x => x.Width(slideWidth));
+                SlidesContainer.AllChildren.Do(x => x.Width(slideWidth));
             }
         }
 
@@ -240,7 +239,7 @@
         {
             if (SlidesContainer == null || SlidesContainer.CurrentChildren.None()) return;
 
-            foreach (var child in SlidesContainer.CurrentChildren)
+            foreach (var child in SlidesContainer.AllChildren)
             {
                 var slide = child as Slide;
                 if (slide == null) continue;
@@ -329,20 +328,6 @@
 
             foreach (var c in bullets)
                 await c.SetPseudoCssState("active", c == current);
-        }
-
-        public class CarouselSlides
-        {
-            Carousel Carousel;
-            internal CarouselSlides(Carousel carousel) { Carousel = carousel; }
-            public Task<Slide> Add(View slide) => Carousel.AddSlide(slide);
-            public int Count => Carousel.SlidesContainer.CurrentChildren.Count();
-            public bool Zoomed => Carousel.SlidesContainer.CurrentChildren.Any(x => !(x as ScrollView).Zoom.AlmostEquals(1, 0.1f));
-
-            public virtual async Task AddRange<T>(IEnumerable<T> slides) where T : View
-            {
-                foreach (var s in slides) await Add(s);
-            }
         }
 
         public class Slide : ScrollView { }
