@@ -37,7 +37,6 @@
             {
                 if (value == ZoomingStatus) return;
                 ZoomingStatus = value;
-                ZoomStatusChanged(value);
             }
         }
 
@@ -78,8 +77,6 @@
             await ApplySelectedBullet();
 
             await WhenShown(() => ApplySelectedWithoutAnimation(0, 0));
-
-            ZoomStatusChanged(ZoomingStatus);
 
             Panning.Handle(OnPanning);
             PanFinished.Handle(OnPanFinished);
@@ -186,9 +183,13 @@
             BulletsContainer.Y.BindTo(Height, BulletsContainer.Height, BulletsContainer.Margin.Bottom, (x, y, mb) => x - y - mb);
         }
 
-        public async Task<Slide> AddSlide(View child)
+        public async Task<View> AddSlide(View child)
         {
-            var slide = new Slide().Width(InternalSlideWidth);
+            View slide;
+            if (EnableZooming) slide = new ScrollView() { EnableZooming = true };
+            else slide = new Stack();
+
+            slide.Width(InternalSlideWidth);
 
             await slide.Add(child);
             await SlidesContainer.Add(slide);
@@ -201,7 +202,7 @@
             return slide;
         }
 
-        void HandleVisibility(View child, Slide slide)
+        void HandleVisibility(View child, View slide)
         {
             slide.Ignored = child.Ignored;
             slide.Visible = child.Visible;
@@ -233,18 +234,6 @@
                 BulletsContainer.Visible(value: true);
 
             SetContainerWidth();
-        }
-
-        void ZoomStatusChanged(bool value)
-        {
-            if (SlidesContainer == null || SlidesContainer.CurrentChildren.None()) return;
-
-            foreach (var child in SlidesContainer.AllChildren)
-            {
-                var slide = child as Slide;
-                if (slide == null) continue;
-                slide.EnableZooming = value;
-            }
         }
 
         public async Task Next(bool animate = true)
@@ -329,8 +318,6 @@
             foreach (var c in bullets)
                 await c.SetPseudoCssState("active", c == current);
         }
-
-        public class Slide : ScrollView { }
 
         public class Bullet : Canvas { }
     }
