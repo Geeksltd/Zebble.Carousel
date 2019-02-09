@@ -186,8 +186,8 @@
         public async Task<View> AddSlide(View child)
         {
             View slide;
-            if (EnableZooming) slide = new ScrollView() { EnableZooming = true };
-            else slide = new Stack();
+            if (EnableZooming) slide = new ZoomableSlide() { EnableZooming = true };
+            else slide = new Slide();
 
             slide.Width(InternalSlideWidth);
 
@@ -320,5 +320,9 @@
         }
 
         public class Bullet : Canvas { }
+
+        public class Slide : Stack { }
+
+        public class ZoomableSlide : ScrollView { }
     }
 }

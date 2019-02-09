@@ -13,7 +13,15 @@
             internal CarouselSlides(Carousel carousel) { Carousel = carousel; }
             public Task<View> Add(View slide) => Carousel.AddSlide(slide);
             public int Count => Carousel.SlidesContainer.CurrentChildren.Count();
-            public bool Zoomed => Carousel.SlidesContainer.CurrentChildren.Any(x => !(x as ScrollView).Zoom.AlmostEquals(1, 0.1f));
+            public bool Zoomed
+            {
+                get
+                {
+                    var zoomableChildren = Carousel.SlidesContainer.CurrentChildren.OfType<ZoomableSlide>();
+                    if (!zoomableChildren.Any()) return false;
+                    return zoomableChildren.Any(x => !x.Zoom.AlmostEquals(1, 0.1f));
+                }
+            }
 
             public virtual async Task AddRange<T>(IEnumerable<T> slides) where T : View
             {
