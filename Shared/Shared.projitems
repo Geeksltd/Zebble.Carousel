@@ -9,6 +9,7 @@
     <Import_RootNamespace>Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Carousel.Bullet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Carousel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CarouselSlides.cs" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\CreatePackage.bat" />

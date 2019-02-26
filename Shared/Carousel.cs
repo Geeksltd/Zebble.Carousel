@@ -21,22 +21,19 @@
         int CurrentSlideIndex;
         readonly float CurrentXPosition;
         public readonly CarouselSlides Slides;
-        public readonly Stack BulletsContainer;
+        public readonly AsyncEvent SlideChanged = new AsyncEvent();
         readonly Stack SlidesContainer;
-        Direction? LastDirection;
-        readonly DateTime? PanningDuration;
-        private bool ZoomingStatus;
-        private readonly bool DirectionHasChanged;
+        bool enableZooming;
 
         public bool CenterAligned { get; set; } = true;
 
         public bool EnableZooming
         {
-            get { return ZoomingStatus; }
+            get { return enableZooming; }
             set
             {
-                if (value == ZoomingStatus) return;
-                ZoomingStatus = value;
+                if (value == enableZooming) return;
+                enableZooming = value;
             }
         }
 
@@ -82,58 +79,37 @@
             PanFinished.Handle(OnPanFinished);
         }
 
-        async Task OnPanning(PannedEventArgs args)
+        Task OnPanning(PannedEventArgs args)
         {
-            if (Slides.Zoomed) return;
+            if (!Slides.Zoomed)
+            {
+                var difference = args.From.X - args.To.X;
+                SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
+            }
 
-            var difference = args.From.X - args.To.X;
-
-            if (Math.Abs(difference) > ACCEPTED_PAN_VALUE)
-                LastDirection = difference > 0 ? Zebble.Direction.Left : Zebble.Direction.Right;
-
-            SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
+            return Task.CompletedTask;
         }
 
-        async Task OnPanFinished(PannedEventArgs args)
+        Task OnPanFinished(PannedEventArgs args)
         {
-            if (Slides.Zoomed) return;
+            if (Slides.Zoomed) return Task.CompletedTask;
 
             var velocity = Math.Abs(args.Velocity.X);
 
             if (velocity >= VELOCITY_VALUE)
-                await DoMove(args.Velocity, true);
-            else
-                await StayOnBestMatch();
-        }
-
-        async Task StayOnBestMatch()
-        {
-            var index = -(int)Math.Round((SlidesContainer.ActualX - XPositionOffset) / InternalSlideWidth);
-
-            if (index < 0) index = 0;
-            if (index > Slides.Count - 1) index = Slides.Count - 1;
-
-            await SlidesContainer.Animate(t => ApplySelectedBulletAnimation(CurrentSlideIndex, index));
-            CurrentSlideIndex = index;
-        }
-
-        async Task DoMove(Point velocity, bool withLastMove = false)
-        {
-            Direction? direction;
-            if (withLastMove)
             {
-                direction = LastDirection;
-                if (direction == Zebble.Direction.Right) await Previous();
-                else if (direction == Zebble.Direction.Left) await Next();
-            }
-            else
-            {
-                direction = await GetDirection(velocity);
-                if (direction == Zebble.Direction.Right) await Previous();
-                else if (direction == Zebble.Direction.Left) await Next();
+                if (args.From.X > args.To.X) return Next();
+                else return Previous();
             }
 
-            await Task.CompletedTask;
+            CurrentSlideIndex = GetBestMatchIndex();
+            return SlidesContainer.Animate(x => SetPosition(CurrentSlideIndex));
+        }
+
+        int GetBestMatchIndex()
+        {
+            var result = -(int)Math.Round((SlidesContainer.ActualX - XPositionOffset) / InternalSlideWidth);
+            return result.LimitMin(0).LimitMax(Slides.Count - 1);
         }
 
         Task<Direction?> GetDirection(Point velocity)
@@ -146,42 +122,16 @@
             return Task.FromResult(result);
         }
 
-        async Task CreateBulletContainer()
-        {
-            await Add(BulletsContainer);
-
-            foreach (var c in BulletsContainer.AllChildren<Bullet>())
-                await c.SetPseudoCssState("active", set: false);
-
-            await (BulletsContainer.AllChildren<Bullet>().Skip(CurrentSlideIndex)
-                  .FirstOrDefault()?.SetPseudoCssState("active", set: true)).OrCompleted();
-        }
-
-        async Task AddBullet()
-        {
-            await BulletsContainer.Add(new Bullet());
-
-            if (!BulletsContainer.Visible && BulletsContainer.CurrentChildren.Count() > 1)
-                BulletsContainer.Visible(value: true);
-        }
-
         public override async Task OnPreRender()
         {
             await base.OnPreRender();
-
             PositionBullets();
-
-            SetContainerWidth();
+            AdjustContainerWidth();
         }
 
-        void SetContainerWidth() => SlidesContainer.Width(SlidesContainer.CurrentChildren.Count() * InternalSlideWidth);
+        void AdjustContainerWidth() => SlidesContainer.Width(SlidesContainer.CurrentChildren.Count() * InternalSlideWidth);
 
         float InternalSlideWidth => SlideWidth ?? ActualWidth;
-
-        void PositionBullets()
-        {
-            BulletsContainer.Y.BindTo(Height, BulletsContainer.Height, BulletsContainer.Margin.Bottom, (x, y, mb) => x - y - mb);
-        }
 
         public async Task<View> AddSlide(View child)
         {
@@ -196,8 +146,7 @@
             await AddBullet();
 
             HandleVisibility(child, slide);
-
-            SetContainerWidth();
+            AdjustContainerWidth();
 
             return slide;
         }
@@ -210,7 +159,7 @@
             child.IgnoredChanged.Handle(() =>
             {
                 slide.Ignored = child.Ignored;
-                SetContainerWidth();
+                AdjustContainerWidth();
             });
 
             child.VisibilityChanged.Handle(() => slide.Visible = child.Visible);
@@ -225,15 +174,8 @@
             }
 
             await SlidesContainer.Remove(child.Parent);
-
-            var bullet = BulletsContainer.CurrentChildren.LastOrDefault();
-            if (bullet != null)
-                await BulletsContainer.Remove(bullet);
-
-            if (!BulletsContainer.Visible && BulletsContainer.CurrentChildren.Count() > 1)
-                BulletsContainer.Visible(value: true);
-
-            SetContainerWidth();
+            await RemoveLastBullet();
+            AdjustContainerWidth();
         }
 
         public async Task Next(bool animate = true)
@@ -242,8 +184,8 @@
             CurrentSlideIndex++;
 
             if (CurrentSlideIndex >= Slides.Count - 1) CurrentSlideIndex = Slides.Count - 1;
-
             await MoveSlide(animate, oldSlideIndex);
+            await SlideChanged.Raise();
         }
 
         public async Task Previous(bool animate = true)
@@ -252,8 +194,8 @@
             CurrentSlideIndex--;
 
             if (CurrentSlideIndex <= 0) CurrentSlideIndex = 0;
-
             await MoveSlide(animate, oldSlideIndex);
+            await SlideChanged.Raise();
         }
 
         public async Task ShowFirst(bool animate = true)
@@ -276,7 +218,8 @@
         {
             if (animate)
             {
-                SlidesContainer.Animate(c => ApplySelectedBulletAnimation(oldSlideIndex, CurrentSlideIndex)).RunInParallel();
+                BulletsContainer.Animate(c => SetHighlightedBullet(oldSlideIndex, CurrentSlideIndex)).RunInParallel();
+                SlidesContainer.Animate(c => SetPosition(CurrentSlideIndex)).RunInParallel();
             }
             else
             {
@@ -286,40 +229,13 @@
 
         async Task ApplySelectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
         {
-            SlidesContainer.X(XPositionOffset - currentSlideIndex * InternalSlideWidth);
-
+            SetPosition(currentSlideIndex);
             await ApplySelectedBullet();
         }
 
+        void SetPosition(int currentIndex) => SlidesContainer.X(XPositionOffset - currentIndex * InternalSlideWidth);
+
         float XPositionOffset => CenterAligned ? (ActualWidth - InternalSlideWidth) / 2 : 0;
-
-        void ApplySelectedBulletAnimation(int oldBulletIndex, int currentBulletIndex)
-        {
-            var bullets = BulletsContainer.AllChildren<Bullet>().ToList();
-
-            if (bullets.Count == 0) return;
-
-            var oldBullet = bullets[oldBulletIndex];
-            var currentBullet = bullets[currentBulletIndex];
-
-            SlidesContainer.X(XPositionOffset - currentBulletIndex * InternalSlideWidth);
-
-            oldBullet.SetPseudoCssState("active", set: false).RunInParallel();
-            currentBullet.SetPseudoCssState("active", set: true).RunInParallel();
-        }
-
-        async Task ApplySelectedBullet()
-        {
-            var bullets = BulletsContainer.AllChildren<Bullet>().ToList();
-
-            var current = bullets.Skip(CurrentSlideIndex).FirstOrDefault();
-            if (current == null) return;
-
-            foreach (var c in bullets)
-                await c.SetPseudoCssState("active", c == current);
-        }
-
-        public class Bullet : Canvas { }
 
         public class Slide : Stack { }
 
