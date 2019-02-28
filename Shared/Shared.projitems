@@ -13,7 +13,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Carousel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CarouselSlides.cs" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\CreatePackage.bat" />
-    <None Include="$(MSBuildThisFileDirectory)NuGet\NuGet.exe" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\NuGet.nuspec" />
   </ItemGroup>
   <ItemGroup>
