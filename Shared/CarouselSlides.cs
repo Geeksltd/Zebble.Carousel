@@ -12,6 +12,7 @@
             Carousel Carousel;
             internal CarouselSlides(Carousel carousel) { Carousel = carousel; }
             public Task<View> Add(View slide) => Carousel.AddSlide(slide);
+
             public int Count => Carousel.SlidesContainer.CurrentChildren.Count();
             public bool Zoomed
             {

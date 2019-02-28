@@ -42,7 +42,7 @@
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>..\lib\</OutputPath>
     <DefineConstants>TRACE;DEBUG;NETFX_CORE;UWP</DefineConstants>
-    <NoWarn>;2008;1998</NoWarn>
+    <NoWarn>;2008;1998;1591</NoWarn>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <UseVSHostingProcess>false</UseVSHostingProcess>
