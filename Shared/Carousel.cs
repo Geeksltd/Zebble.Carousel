@@ -8,18 +8,17 @@
     {
         const int DEFAULT_HEIGHT = 300, ACCEPTED_PAN_VALUE = 5;
 #if ANDROID
-        const int VELOCITY_VALUE = 300;
+        const float VELOCITY_VALUE = 200;
 #elif UWP
-        const int VELOCITY_VALUE = 1;
+        const float VELOCITY_VALUE = 1;
 #elif IOS
-        const int VELOCITY_VALUE = 30;
+        const float VELOCITY_VALUE = 30;
 #endif
 
         const float HALF_SECOUND = 0.5f;
 
         float? slideWidth;
-        int CurrentSlideIndex;
-        readonly float CurrentXPosition;
+        public int CurrentSlideIndex { get; private set; }
         public readonly CarouselSlides Slides;
         public readonly AsyncEvent SlideChanged = new AsyncEvent();
         readonly Stack SlidesContainer;
@@ -235,7 +234,7 @@
 
         void SetPosition(int currentIndex) => SlidesContainer.X(XPositionOffset - currentIndex * InternalSlideWidth);
 
-        float XPositionOffset => CenterAligned ? (ActualWidth - InternalSlideWidth) / 2 : 0;
+        public float XPositionOffset => CenterAligned ? (ActualWidth - InternalSlideWidth) / 2 : 0;
 
         public class Slide : Stack { }
 
