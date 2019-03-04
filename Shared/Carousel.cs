@@ -7,15 +7,12 @@
     public partial class Carousel : Stack
     {
         const int DEFAULT_HEIGHT = 300, ACCEPTED_PAN_VALUE = 5;
-#if ANDROID
-        const float VELOCITY_VALUE = 200;
-#elif UWP
-        const float VELOCITY_VALUE = 1;
-#elif IOS
-        const float VELOCITY_VALUE = 30;
-#endif
 
-        const float HALF_SECOUND = 0.5f;
+#if IOS
+        const float VELOCITY_VALUE = 30;
+#else
+        const float VELOCITY_VALUE = 0.5f;
+#endif
 
         float? slideWidth;
         public int CurrentSlideIndex { get; private set; }
@@ -97,8 +94,8 @@
 
             if (velocity >= VELOCITY_VALUE)
             {
-                if (args.From.X > args.To.X) return Next();
-                else return Previous();
+                if (args.Velocity.X > 0) return Previous();
+                else return Next();
             }
 
             CurrentSlideIndex = GetBestMatchIndex();
