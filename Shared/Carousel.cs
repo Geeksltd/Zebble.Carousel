@@ -11,9 +11,10 @@
 #if IOS
         const float VELOCITY_VALUE = 30;
 #else
-        const float VELOCITY_VALUE = 0.5f;
+        const float VELOCITY_VALUE = 0.20f;
 #endif
 
+        bool IsAnimating;
         float? slideWidth;
         public int CurrentSlideIndex { get; private set; }
         public readonly CarouselSlides Slides;
@@ -75,15 +76,16 @@
             PanFinished.Handle(OnPanFinished);
         }
 
-        Task OnPanning(PannedEventArgs args)
+        async Task OnPanning(PannedEventArgs args)
         {
+            if (IsAnimating) return;
+
             if (!Slides.Zoomed)
             {
                 var difference = args.From.X - args.To.X;
+
                 SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
             }
-
-            return Task.CompletedTask;
         }
 
         Task OnPanFinished(PannedEventArgs args)
@@ -99,7 +101,10 @@
             }
 
             CurrentSlideIndex = GetBestMatchIndex();
-            return SlidesContainer.Animate(x => SetPosition(CurrentSlideIndex));
+
+            IsAnimating = true;
+            return SlidesContainer.Animate(x => SetPosition(CurrentSlideIndex))
+                .ContinueWith(x => IsAnimating = false);
         }
 
         int GetBestMatchIndex()
@@ -215,7 +220,9 @@
             if (animate)
             {
                 BulletsContainer.Animate(c => SetHighlightedBullet(oldSlideIndex, CurrentSlideIndex)).RunInParallel();
-                SlidesContainer.Animate(c => SetPosition(CurrentSlideIndex)).RunInParallel();
+                IsAnimating = true;
+                SlidesContainer.Animate(c => SetPosition(CurrentSlideIndex))
+                    .ContinueWith(x => IsAnimating = false).RunInParallel();
             }
             else
             {

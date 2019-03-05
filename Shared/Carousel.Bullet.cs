@@ -52,17 +52,17 @@
             if (!BulletsContainer.Visible && BulletsContainer.CurrentChildren.Count() > 1)
                 BulletsContainer.Visible(value: true);
         }
-        
+
         void SetHighlightedBullet(int oldIndex, int currentIndex)
         {
             var bullets = BulletsContainer.AllChildren<Bullet>().ToList();
             if (bullets.Count == 0) return;
 
-            var oldBullet = bullets[oldIndex];
-            var currentBullet = bullets[currentIndex];
+            var oldBullet = bullets.ElementAtOrDefault(oldIndex);
+            var currentBullet = bullets.ElementAt(currentIndex);
 
-            oldBullet.SetPseudoCssState("active", set: false).RunInParallel();
-            currentBullet.SetPseudoCssState("active", set: true).RunInParallel();
+            oldBullet?.SetPseudoCssState("active", set: false).RunInParallel();
+            currentBullet?.SetPseudoCssState("active", set: true).RunInParallel();
         }
 
         public class Bullet : Canvas { }
