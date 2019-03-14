@@ -55,11 +55,10 @@
 
         void SetHighlightedBullet(int oldIndex, int currentIndex)
         {
-            var bullets = BulletsContainer.AllChildren<Bullet>().ToList();
-            if (bullets.Count == 0) return;
+            var bullets = BulletsContainer.AllChildren<Bullet>().ToArray();
 
             var oldBullet = bullets.ElementAtOrDefault(oldIndex);
-            var currentBullet = bullets.ElementAt(currentIndex);
+            var currentBullet = bullets.ElementAtOrDefault(currentIndex);
 
             oldBullet?.SetPseudoCssState("active", set: false).RunInParallel();
             currentBullet?.SetPseudoCssState("active", set: true).RunInParallel();
