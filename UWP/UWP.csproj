@@ -120,7 +120,7 @@
       <Version>9.0.1</Version>
     </PackageReference>
     <PackageReference Include="Zebble">
-      <Version>4.4.185</Version>
+      <Version>4.4.239</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="..\Shared\Shared.projitems" Label="Shared" Condition="Exists('..\Shared\Shared.projitems')" />
@@ -148,6 +148,8 @@ if not exist $(SolutionDir)lib\bin\Release mkdir $(SolutionDir)lib\bin\Release
 robocopy  $(SolutionDir)lib\bin\x86\Release $(SolutionDir)lib\bin\Release /COPYALL /E
 
 $(SolutionDir)Shared\NuGet\CorFlags.exe /32bitreq- $(SolutionDir)lib\bin\Release\Zebble.Carousel.UWP.dll
-)</PostBuildEvent>
+)
+
+copy /y $(TargetDir)*.* C:\Users\Administrator\.nuget\packages\zebble.carousel\4.5.298\runtimes\win10-x86\lib\uap10.0</PostBuildEvent>
   </PropertyGroup>
 </Project>
