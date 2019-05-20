@@ -19,7 +19,8 @@
         public int CurrentSlideIndex { get; private set; }
         public readonly CarouselSlides Slides;
         public readonly AsyncEvent SlideChanged = new AsyncEvent();
-        readonly Stack SlidesContainer;
+        public readonly AsyncEvent SlideChanging = new AsyncEvent();
+        protected readonly Stack SlidesContainer;
         bool enableZooming;
 
         public bool CenterAligned { get; set; } = true;
@@ -110,7 +111,7 @@
         int GetBestMatchIndex()
         {
             var result = -(int)Math.Round((SlidesContainer.ActualX - XPositionOffset) / InternalSlideWidth);
-            return result.LimitMin(0).LimitMax(Slides.Count - 1);
+            return result.LimitMin(0).LimitMax(CountSlides() - 1);
         }
 
         Task<Direction?> GetDirection(Point velocity)
@@ -130,7 +131,9 @@
             AdjustContainerWidth();
         }
 
-        void AdjustContainerWidth() => SlidesContainer.Width(SlidesContainer.CurrentChildren.Count() * InternalSlideWidth);
+        protected virtual int CountSlides() => Slides.Count;
+
+        void AdjustContainerWidth() => SlidesContainer.Width(CountSlides() * InternalSlideWidth);
 
         float InternalSlideWidth => SlideWidth ?? ActualWidth;
 
@@ -157,9 +160,9 @@
             slide.Ignored = child.Ignored;
             slide.Visible = child.Visible;
 
-            child.IgnoredChanged.Handle(() =>
+            child.IgnoredChanged.Handle(x =>
             {
-                slide.Ignored = child.Ignored;
+                slide.Ignored = x.Value;
                 AdjustContainerWidth();
             });
 
@@ -184,7 +187,8 @@
             var oldSlideIndex = CurrentSlideIndex;
             CurrentSlideIndex++;
 
-            if (CurrentSlideIndex >= Slides.Count - 1) CurrentSlideIndex = Slides.Count - 1;
+            if (CurrentSlideIndex >= CountSlides() - 1) CurrentSlideIndex = CountSlides() - 1;
+            await SlideChanging.Raise();
             await MoveSlide(animate, oldSlideIndex);
             await SlideChanged.Raise();
         }
@@ -195,6 +199,7 @@
             CurrentSlideIndex--;
 
             if (CurrentSlideIndex <= 0) CurrentSlideIndex = 0;
+            SlideChanging.Raise();
             await MoveSlide(animate, oldSlideIndex);
             await SlideChanged.Raise();
         }
@@ -210,7 +215,7 @@
         public async Task ShowLast(bool animate = true)
         {
             var oldSlideIndex = CurrentSlideIndex;
-            CurrentSlideIndex = Slides.Count - 1;
+            CurrentSlideIndex = CountSlides() - 1;
 
             await MoveSlide(animate, oldSlideIndex);
         }
@@ -243,5 +248,12 @@
         public class Slide : Stack { }
 
         public class ZoomableSlide : ScrollView { }
+
+        public override void Dispose()
+        {
+            SlideChanging?.Dispose();
+            SlideChanged?.Dispose();
+            base.Dispose();
+        }
     }
 }

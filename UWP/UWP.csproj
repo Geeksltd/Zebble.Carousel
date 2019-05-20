@@ -56,13 +56,15 @@
     <OutputPath>..\lib\bin\x86\Release\</OutputPath>
     <DefineConstants>TRACE;NETFX_CORE;WINDOWS_UWP;UWP</DefineConstants>
     <Optimize>true</Optimize>
-    <NoWarn>;2008;1998</NoWarn>
+    <NoWarn>;2008;1998;1591</NoWarn>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <ErrorReport>prompt</ErrorReport>
     <GenerateLibraryLayout>true</GenerateLibraryLayout>
     <DocumentationFile>..\lib\bin\x86\Release\Zebble.Carousel.UWP.XML</DocumentationFile>
+    <SuppressXamlWarnings>
+    </SuppressXamlWarnings>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|ARM'">
     <PlatformTarget>ARM</PlatformTarget>
@@ -120,7 +122,7 @@
       <Version>9.0.1</Version>
     </PackageReference>
     <PackageReference Include="Zebble">
-      <Version>4.4.239</Version>
+      <Version>4.4.241</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="..\Shared\Shared.projitems" Label="Shared" Condition="Exists('..\Shared\Shared.projitems')" />
@@ -142,7 +144,9 @@
     <Error Condition="!Exists('..\Shared\Shared.projitems')" Text="This project references Shared that are missing on this computer." />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>if $(PlatformName) == x86 (
+    <PostBuildEvent>copy /y $(TargetDir)Zebble.Carousel.UWP.* C:\Users\Administrator\.nuget\packages\zebble.carousel\4.5.301\runtimes\win10-x86\lib\uap10.0
+
+if $(PlatformName) == x86 (
 if not exist $(SolutionDir)lib\bin\Release mkdir $(SolutionDir)lib\bin\Release
 
 robocopy  $(SolutionDir)lib\bin\x86\Release $(SolutionDir)lib\bin\Release /COPYALL /E
@@ -150,6 +154,6 @@ robocopy  $(SolutionDir)lib\bin\x86\Release $(SolutionDir)lib\bin\Release /COPYA
 $(SolutionDir)Shared\NuGet\CorFlags.exe /32bitreq- $(SolutionDir)lib\bin\Release\Zebble.Carousel.UWP.dll
 )
 
-copy /y $(TargetDir)*.* C:\Users\Administrator\.nuget\packages\zebble.carousel\4.5.298\runtimes\win10-x86\lib\uap10.0</PostBuildEvent>
+</PostBuildEvent>
   </PropertyGroup>
 </Project>
