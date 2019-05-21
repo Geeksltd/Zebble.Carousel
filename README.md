@@ -90,3 +90,19 @@ IEnumerable<string> GetSlideFiles()
 | AddSlide        | Task<Slide>         | View => child | x       | x   | x       |
 | Next        | Task         |	bool => animate	| x       | x   | x       |
 | Previous   | Task         | bool => animate | x       | x   | x       |
+
+# RecyclerCarousel
+Normal carousel is very flexible. Each slide can be any view object. But it requires all slides to be pre-rendered, which is not efficient if you have many.
+
+In cases where you have several views all with the same templates, it's much more efficient to use `RecyclerCarousel` which is much much faster.
+
+```html
+<RecyclerCarousel z-of="Product, SlideTemplate" DataSource="@Products">
+    <z-Component z-type="SlideTemplate" z-base="RecyclerCarouselSlide[Product]">
+        <ImageView Path="@{Item, x=>x?.Thumbnail}" />
+        <TextView  Text="@{Item, x=>x?.Name}"/>
+    </z-Component>
+</RecyclerCarousel>
+```
+
+In the above example, `Products` is an `IEnumerable<Product>` which is the data source from which to populate the slides. For example you may have 10 product instances in an array. The carousel will always render a maximum of 3 items. As you swipe through the slides, it will reuse the slide ui objects and just change their X position and also update the data source which is the `Item` property. Please note that `Item` is a `Bindable<Product>` which means you need to use the `@{Item, x=>x.Something}` syntax in your template.
