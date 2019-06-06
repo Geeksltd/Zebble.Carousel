@@ -17,7 +17,23 @@
         public IEnumerable<TSource> DataSource
         {
             get => dataSource;
-            set => dataSource = value.OrEmpty().ToArray();
+            set
+            {
+                dataSource = value.OrEmpty().ToArray();
+                
+                if (IsInitialized)
+                {
+                    if (value.Any()) SetSlide(LeftSlide, value.First());
+                    if (value.HasMany()) SetSlide(MiddleSlide, value.ExceptFirst().First());
+                    if (value.ExceptFirst().HasMany()) SetSlide(RightSlide, value.Skip(2).First());               
+                }                    
+            }
+        }
+
+        void SetSlide(View view, TSource item)
+        {
+            if (view is null) CreateSlide(item);
+            else Item(view).Value = item;
         }
 
         public override async Task OnInitializing()
