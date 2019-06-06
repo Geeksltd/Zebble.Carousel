@@ -19,25 +19,21 @@
             get => dataSource;
             set
             {
-                if (SlidesContainer.AllChildren.Any()) //already rendered
+                dataSource = value.OrEmpty().ToArray();
+                
+                if (IsInitialized)
                 {
                     if (value.Any()) SetSlide(LeftSlide, value.First());
-
                     if (value.HasMany()) SetSlide(MiddleSlide, value.ExceptFirst().First());
-
-                    if (value.ExceptFirst().HasMany()) SetSlide(RightSlide, value.Skip(2).First());
-                }
-                else
-                    dataSource = value.OrEmpty().ToArray();
+                    if (value.ExceptFirst().HasMany()) SetSlide(RightSlide, value.Skip(2).First());               
+                }                    
             }
         }
 
-        private void SetSlide(View view, TSource item)
+        void SetSlide(View view, TSource item)
         {
-            if (view == null)
-                CreateSlide(item);
-            else
-                Item(view).Value = item;
+            if (view is null) CreateSlide(item);
+            else Item(view).Value = item;
         }
 
         public override async Task OnInitializing()
