@@ -11,6 +11,7 @@
           where TSource : class
     {
         TSource[] dataSource = new TSource[0];
+        bool IsInitialized;
 
         public RecyclerCarousel() => SlideChanging.Handle(OnSlideChanging);
 
@@ -19,20 +20,28 @@
             get => dataSource;
             set
             {
-                dataSource = value.OrEmpty().ToArray();
-                
                 if (IsInitialized)
-                {
-                    if (value.Any()) SetSlide(LeftSlide, value.First());
-                    if (value.HasMany()) SetSlide(MiddleSlide, value.ExceptFirst().First());
-                    if (value.ExceptFirst().HasMany()) SetSlide(RightSlide, value.Skip(2).First());               
-                }                    
+                    Device.Log.Error("RecyclerCarousel.DataSource should not be set once it's initialized. Call UpdateDataSource() instead.");
+
+                UpdateDataSource(value).RunInParallel();
             }
         }
 
-        void SetSlide(View view, TSource item)
+        public async Task UpdateDataSource(IEnumerable<TSource> data)
         {
-            if (view is null) CreateSlide(item);
+            dataSource = data.OrEmpty().ToArray();
+
+            if (IsInitialized)
+            {
+                if (dataSource.Any()) await CreateOrUpdateSlide(LeftSlide, dataSource[0]);
+                if (dataSource.HasMany()) await CreateOrUpdateSlide(MiddleSlide, dataSource[1]);
+                if (dataSource.Length > 2) await CreateOrUpdateSlide(RightSlide, dataSource[2]);
+            }
+        }
+
+        async Task CreateOrUpdateSlide(View view, TSource item)
+        {
+            if (view is null) await CreateSlide(item);
             else Item(view).Value = item;
         }
 
@@ -40,6 +49,7 @@
         {
             await base.OnInitializing();
             foreach (var item in DataSource.Take(2)) await CreateSlide(item);
+            IsInitialized = true;
         }
 
         async Task CreateSlide(TSource item)
