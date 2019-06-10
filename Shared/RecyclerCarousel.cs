@@ -33,16 +33,24 @@
 
             if (IsInitialized)
             {
-                if (dataSource.Any()) await CreateOrUpdateSlide(LeftSlide, dataSource[0]);
-                if (dataSource.HasMany()) await CreateOrUpdateSlide(MiddleSlide, dataSource[1]);
-                if (dataSource.Length > 2) await CreateOrUpdateSlide(RightSlide, dataSource[2]);
+                if (dataSource.Any()) await CreateOrUpdateSlide(LeftSlide, 0);
+                if (dataSource.HasMany()) await CreateOrUpdateSlide(MiddleSlide, 1);
+                if (dataSource.Length > 2) await CreateOrUpdateSlide(RightSlide, 2);
+
+                if (RightSlide != null && dataSource.Length < 3) await RightSlide.RemoveSelf();
+                if (MiddleSlide != null && dataSource.Length < 2) await MiddleSlide.RemoveSelf();
+                if (LeftSlide != null && dataSource.None()) await LeftSlide.RemoveSelf();
+
+                ShowFirst(animate: false);
             }
         }
 
-        async Task CreateOrUpdateSlide(View view, TSource item)
+        async Task CreateOrUpdateSlide(View view, int index)
         {
-            if (view is null) await CreateSlide(item);
+            TSource item = dataSource[index];
+            if (view is null) view = await CreateSlide(item);
             else Item(view).Value = item;
+            view.X(index * SlideWidth);
         }
 
         public override async Task OnInitializing()
@@ -52,13 +60,12 @@
             IsInitialized = true;
         }
 
-        async Task CreateSlide(TSource item)
+        async Task<View> CreateSlide(TSource item)
         {
             var slide = new TSlideTemplate();
             slide.Item.Set(item);
-            await AddSlide(slide);
-            var container = SlidesContainer.AllChildren.Last();
-            container.X(container.ActualX);
+            var result = await AddSlide(slide);
+            return result.X(result.ActualX);
         }
 
         float FirstSlideRight => SlidesContainer.AllChildren.MinOrDefault(v => v.ActualRight);

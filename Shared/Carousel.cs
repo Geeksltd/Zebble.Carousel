@@ -199,7 +199,7 @@
             CurrentSlideIndex--;
 
             if (CurrentSlideIndex <= 0) CurrentSlideIndex = 0;
-            SlideChanging.Raise();
+            await SlideChanging.Raise();
             await MoveSlide(animate, oldSlideIndex);
             await SlideChanged.Raise();
         }
@@ -241,7 +241,7 @@
             await ApplySelectedBullet();
         }
 
-        void SetPosition(int currentIndex) => SlidesContainer.X(XPositionOffset - currentIndex * InternalSlideWidth);
+        protected void SetPosition(int currentIndex) => SlidesContainer.X(XPositionOffset - currentIndex * InternalSlideWidth);
 
         public float XPositionOffset => CenterAligned ? (ActualWidth - InternalSlideWidth) / 2 : 0;
 
