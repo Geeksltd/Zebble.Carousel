@@ -20,7 +20,7 @@
         public readonly CarouselSlides Slides;
         public readonly AsyncEvent SlideChanged = new AsyncEvent();
         public readonly AsyncEvent SlideChanging = new AsyncEvent();
-        protected readonly Stack SlidesContainer;
+        public readonly Stack SlidesContainer;
         bool enableZooming;
 
         public bool CenterAligned { get; set; } = true;
