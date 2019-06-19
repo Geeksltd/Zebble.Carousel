@@ -13,7 +13,11 @@
         TSource[] dataSource = new TSource[0];
         bool IsInitialized;
 
-        public RecyclerCarousel() => SlideChanging.Handle(OnSlideChanging);
+        public RecyclerCarousel()
+        {
+            SlideChanging.Handle(OnSlideChanging);
+            SlideWidthChanged.Handle(OnSlideWidthChanged);
+        }
 
         public IEnumerable<TSource> DataSource
         {
@@ -88,6 +92,18 @@
             }
 
             EnsureMiddleSlideIsCurrent();
+        }
+
+        async Task OnSlideWidthChanged()
+        {
+            if (!IsInitialized) return;
+
+            var index = 0;
+            foreach (var item in SlidesContainer.AllChildren.OrderBy(v => v.ActualX).ToArray())
+            {
+                item.X(index * SlideWidth).Width(SlideWidth);
+                index++;
+            }
         }
 
         void EnsureMiddleSlideIsCurrent()

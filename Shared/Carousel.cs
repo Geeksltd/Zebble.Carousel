@@ -20,6 +20,7 @@
         public readonly CarouselSlides Slides;
         public readonly AsyncEvent SlideChanged = new AsyncEvent();
         public readonly AsyncEvent SlideChanging = new AsyncEvent();
+        public readonly AsyncEvent SlideWidthChanged = new AsyncEvent();
         public readonly Stack SlidesContainer;
         bool enableZooming;
 
@@ -42,6 +43,7 @@
             {
                 slideWidth = value;
                 SlidesContainer.AllChildren.Do(x => x.Width(slideWidth));
+                SlideWidthChanged?.Raise();
             }
         }
 
@@ -253,6 +255,7 @@
         {
             SlideChanging?.Dispose();
             SlideChanged?.Dispose();
+            SlideWidthChanged?.Dispose();
             base.Dispose();
         }
     }
