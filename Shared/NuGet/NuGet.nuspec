@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
     <id>Zebble.Carousel</id>
-    <version>4.6.307</version>
+    <version>4.6.308</version>
     <title>Carousel for Zebble (Xamarin)</title>
     <description>A Carousel plugin for Zebble allowing the user to swipe between different views.</description>
     <iconUrl>https://raw.githubusercontent.com/Geeksltd/Zebble.Carousel/master/Shared/NuGet/Icon.png</iconUrl>
@@ -15,7 +15,6 @@
   <files>
     <file src="..\..\lib\Zebble.Carousel.iOS.*" target="lib\Xamarin.iOS10\" />
     <file src="..\..\lib\Zebble.Carousel.Android.*" target="lib\MonoAndroid10\" />
-    
     <file src="..\..\lib\bin\ARM\Release\Zebble.Carousel.UWP.*" target="runtimes\win10-arm\lib\uap10.0" />
     <file src="..\..\lib\bin\x64\Release\Zebble.Carousel.UWP.*" target="runtimes\win10-x64\lib\uap10.0" />
     <file src="..\..\lib\bin\x86\Release\Zebble.Carousel.UWP.*" target="runtimes\win10-x86\lib\uap10.0" />
