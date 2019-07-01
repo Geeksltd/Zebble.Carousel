@@ -144,9 +144,7 @@
     <Error Condition="!Exists('..\Shared\Shared.projitems')" Text="This project references Shared that are missing on this computer." />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>copy /y $(TargetDir)Zebble.Carousel.UWP.* C:\Users\Administrator\.nuget\packages\zebble.carousel\4.6.305\lib\uap10\
-
-if $(PlatformName) == x86 (
+    <PostBuildEvent>if $(PlatformName) == x86 (
 if not exist $(SolutionDir)lib\bin\Release mkdir $(SolutionDir)lib\bin\Release
 
 robocopy  $(SolutionDir)lib\bin\x86\Release $(SolutionDir)lib\bin\Release /COPYALL /E
