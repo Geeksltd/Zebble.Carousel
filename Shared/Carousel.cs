@@ -135,7 +135,7 @@
 
         protected virtual int CountSlides() => Slides.Count;
 
-        void AdjustContainerWidth() => SlidesContainer.Width(CountSlides() * InternalSlideWidth);
+        protected void AdjustContainerWidth() => SlidesContainer.Width(CountSlides() * InternalSlideWidth);
 
         float InternalSlideWidth => SlideWidth ?? ActualWidth;
 

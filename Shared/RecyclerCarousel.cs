@@ -35,6 +35,8 @@
         {
             dataSource = data.OrEmpty().ToArray();
 
+            AdjustContainerWidth();
+
             if (IsInitialized)
             {
                 if (dataSource.Any()) await CreateOrUpdateSlide(LeftSlide, 0);
@@ -91,7 +93,7 @@
                     await CreateSlide(item);
             }
 
-            EnsureMiddleSlideIsCurrent();
+            await EnsureMiddleSlideIsCurrent();
         }
 
         async Task OnSlideWidthChanged()
@@ -101,12 +103,14 @@
             var index = 0;
             foreach (var item in SlidesContainer.AllChildren.OrderBy(v => v.ActualX).ToArray())
             {
-                item.X(index * SlideWidth).Width(SlideWidth);
+                await OnUI(() => item.X(index * SlideWidth).Width(SlideWidth));
                 index++;
             }
         }
 
-        void EnsureMiddleSlideIsCurrent()
+        Task OnUI(Action action) => Zebble.UIWorkBatch.Run(action);
+
+        async Task EnsureMiddleSlideIsCurrent()
         {
             if (Item(MiddleSlide)?.Value == CurrentItem) return;
             else if (CurrentItem == Item(RightSlide)?.Value)
@@ -115,7 +119,9 @@
                 if (item == null) return;
 
                 // Move left to right
-                Item(LeftSlide.X(RightSlide.ActualRight)).Set(item);
+                var toRecycle = LeftSlide;
+                Item(toRecycle).Set(item);
+                await OnUI(() => toRecycle.X(RightSlide.ActualRight));
             }
             else if (CurrentItem == Item(LeftSlide)?.Value && CurrentSlideIndex > 0)
             {
@@ -123,8 +129,10 @@
                 if (item == null) return;
 
                 // Move right to left
+                var toRecycle = RightSlide;
+                Item(toRecycle).Set(item);
                 var rightSide = LeftSlide.ActualX - SlideWidth;
-                Item(RightSlide.X(rightSide)).Set(item);
+                await OnUI(() => toRecycle.X(rightSide));
             }
         }
 
