@@ -130,6 +130,7 @@
 
                 // Move right to left
                 var toRecycle = RightSlide;
+                if (toRecycle == null) return;
                 Item(toRecycle).Set(item);
                 var rightSide = LeftSlide.ActualX - SlideWidth;
                 await OnUI(() => toRecycle.X(rightSide));
