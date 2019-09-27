@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
     using System.Threading.Tasks;
 
     public class RecyclerCarousel<TSource, TSlideTemplate> : Carousel
@@ -40,11 +39,11 @@
             if (IsInitialized)
             {
                 if (dataSource.Any()) await CreateOrUpdateSlide(LeftSlide, 0);
-                if (dataSource.HasMany()) await CreateOrUpdateSlide(MiddleSlide, 1);
+                if (dataSource.HasMany()) await CreateOrUpdateSlide(SecondSlide, 1);
                 if (dataSource.Length > 2) await CreateOrUpdateSlide(RightSlide, 2);
 
                 if (RightSlide != null && dataSource.Length < 3) await RightSlide.RemoveSelf();
-                if (MiddleSlide != null && dataSource.Length < 2) await MiddleSlide.RemoveSelf();
+                if (SecondSlide != null && dataSource.Length < 2) await SecondSlide.RemoveSelf();
                 if (LeftSlide != null && dataSource.None()) await LeftSlide.RemoveSelf();
 
                 ShowFirst(animate: false);
@@ -53,16 +52,17 @@
 
         async Task CreateOrUpdateSlide(View view, int index)
         {
-            TSource item = dataSource[index];
+            var item = dataSource[index];
             if (view is null) view = await CreateSlide(item);
             else Item(view).Value = item;
             view.X(index * SlideWidth);
         }
 
-        public override async Task OnInitializing()
+        public override async Task OnPreRender()
         {
-            await base.OnInitializing();
-            foreach (var item in DataSource.Take(2)) await CreateSlide(item);
+            await base.OnPreRender();
+            foreach (var item in DataSource.Take(MaxNeededSlides - 1))
+                await CreateSlide(item);
             IsInitialized = true;
         }
 
@@ -74,22 +74,33 @@
             return result.X(result.ActualX);
         }
 
-        float FirstSlideRight => SlidesContainer.AllChildren.MinOrDefault(v => v.ActualRight);
-
         View LeftSlide => SlidesContainer.AllChildren.OrderBy(v => v.ActualRight).FirstOrDefault();
-        View MiddleSlide => SlidesContainer.AllChildren.OrderBy(v => v.ActualRight).ExceptFirst().FirstOrDefault();
-        View RightSlide => SlidesContainer.AllChildren.OrderBy(v => v.ActualRight).Skip(2).FirstOrDefault();
+        View SecondSlide => SlidesContainer.AllChildren.OrderBy(v => v.ActualRight).ExceptFirst().FirstOrDefault();
+        View RightSlide => SlidesContainer.AllChildren.OrderBy(v => v.ActualRight).Skip(MaxNeededSlides - 1).FirstOrDefault();
 
         TSource CurrentItem => DataSource.ElementAtOrDefault(CurrentSlideIndex);
 
-        Bindable<TSource> Item(View slide) => (slide?.AllChildren.Single() as IRecyclerCarouselSlide<TSource>)?.Item;
+        Bindable<TSource> Item(View slide) => slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().Single().Item;
+
+        int MaxNeededSlides
+        {
+            get
+            {
+                var canFit = 1;
+
+                if (SlideWidth > 0)
+                    canFit = (int)Math.Ceiling(ActualWidth / SlideWidth.Value) + 2;
+
+                return canFit + 2;
+            }
+        }
 
         async Task OnSlideChanging()
         {
-            if (CurrentSlideIndex > 0 && SlidesContainer.AllChildren.Count < 3)
+            if (CurrentSlideIndex > 0 && SlidesContainer.AllChildren.Count < MaxNeededSlides)
             {
-                // Create the 3rd slide
-                foreach (var item in DataSource.Skip(2).Take(1))
+                // Create the next slide
+                foreach (var item in DataSource.Skip(SlidesContainer.AllChildren.Count).Take(1))
                     await CreateSlide(item);
             }
 
@@ -112,19 +123,12 @@
 
         async Task EnsureMiddleSlideIsCurrent()
         {
-            if (Item(MiddleSlide)?.Value == CurrentItem) return;
-            else if (CurrentItem == Item(RightSlide)?.Value)
-            {
-                var item = DataSource.ElementAtOrDefault(CurrentSlideIndex + 1);
-                if (item == null) return;
+            if (Item(SecondSlide)?.Value == CurrentItem) return;
 
-                // Move left to right
-                var toRecycle = LeftSlide;
-                Item(toRecycle).Set(item);
-                await OnUI(() => toRecycle.X(RightSlide.ActualRight));
-            }
-            else if (CurrentItem == Item(LeftSlide)?.Value && CurrentSlideIndex > 0)
+            if (CurrentItem == Item(LeftSlide)?.Value)
             {
+                if (CurrentSlideIndex <= 0) return;
+
                 var item = DataSource.ElementAtOrDefault(CurrentSlideIndex - 1);
                 if (item == null) return;
 
@@ -135,18 +139,19 @@
                 var rightSide = LeftSlide.ActualX - SlideWidth;
                 await OnUI(() => toRecycle.X(rightSide));
             }
+            else
+            {
+                // Move far-left slide to far-right position
+                var item = dataSource?.GetElementAfter(Item(RightSlide)?.Value);
+                if (item != null)
+                {
+                    var toRecycle = LeftSlide;
+                    Item(toRecycle).Set(item);
+                    await OnUI(() => toRecycle.X(RightSlide.ActualRight));
+                }
+            }
         }
 
         protected override int CountSlides() => dataSource.Length;
-    }
-
-    public interface IRecyclerCarouselSlide<TSource>
-    {
-        Bindable<TSource> Item { get; }
-    }
-
-    public abstract class RecyclerCarouselSlide<TSource> : Stack, IRecyclerCarouselSlide<TSource>
-    {
-        public Bindable<TSource> Item { get; } = new Bindable<TSource>();
     }
 }

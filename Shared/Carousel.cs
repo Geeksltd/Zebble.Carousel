@@ -1,18 +1,15 @@
 ﻿namespace Zebble.Plugin
 {
     using System;
-    using System.Linq;
     using System.Threading.Tasks;
 
     public partial class Carousel : Stack
     {
-        const int DEFAULT_HEIGHT = 300, ACCEPTED_PAN_VALUE = 5;
+        public enum StickinessOption { High, Normal, Low }
 
-#if IOS
-        const float VELOCITY_VALUE = 30;
-#else
-        const float VELOCITY_VALUE = 0.20f;
-#endif
+        const int DEFAULT_HEIGHT = 300;
+
+        public StickinessOption Stickiness { get; set; } = StickinessOption.Normal;
 
         bool IsAnimating;
         float? slideWidth;
@@ -44,6 +41,21 @@
                 slideWidth = value;
                 SlidesContainer.AllChildren.Do(x => x.Width(slideWidth));
                 SlideWidthChanged?.Raise();
+            }
+        }
+
+        float StickVelocity
+        {
+            get
+            {
+                var multiplier = 1f;
+                if (Stickiness == StickinessOption.High) multiplier = 2;
+                if (Stickiness == StickinessOption.Low) multiplier = 0.5f;
+#if IOS
+                return multiplier * 30;
+#else
+                return multiplier * 0.20f;
+#endif
             }
         }
 
@@ -97,7 +109,7 @@
 
             var velocity = Math.Abs(args.Velocity.X);
 
-            if (velocity >= VELOCITY_VALUE)
+            if (velocity >= StickVelocity)
             {
                 if (args.Velocity.X > 0) return Previous();
                 else return Next();
@@ -114,16 +126,6 @@
         {
             var result = -(int)Math.Round((SlidesContainer.ActualX - XPositionOffset) / InternalSlideWidth);
             return result.LimitMin(0).LimitMax(CountSlides() - 1);
-        }
-
-        Task<Direction?> GetDirection(Point velocity)
-        {
-            Direction? result;
-            if (velocity.X > 0) result = Zebble.Direction.Right;
-            else if (velocity.X < 0) result = Zebble.Direction.Left;
-            else result = null;
-
-            return Task.FromResult(result);
         }
 
         public override async Task OnPreRender()

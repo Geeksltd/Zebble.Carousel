@@ -12,7 +12,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Carousel.Bullet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Carousel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CarouselSlides.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IRecyclerCarouselSlide.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RecyclerCarousel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RecyclerCarouselSlide.cs" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\CreatePackage.bat" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\NuGet.nuspec" />
   </ItemGroup>
