@@ -142,7 +142,8 @@
             else
             {
                 // Move far-left slide to far-right position
-                var item = dataSource?.GetElementAfter(Item(RightSlide)?.Value);
+                var item = Item(RightSlide)?.Value;
+                if (item != null) item = dataSource.SkipWhile(x => x != item).Skip(1).FirstOrDefault();
                 if (item != null)
                 {
                     var toRecycle = LeftSlide;
