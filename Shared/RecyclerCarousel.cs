@@ -15,7 +15,6 @@
         public RecyclerCarousel()
         {
             SlideChanging.Handle(CreateReserveSlides);
-            SlideChanged.Handle(EnsureMiddleSlideIsCurrent);
             SlideWidthChanged.Handle(OnSlideWidthChanged);
         }
 
@@ -125,52 +124,46 @@
 
         Task OnUI(Action action) => UIWorkBatch.Run(action);
 
-        async Task EnsureMiddleSlideIsCurrent()
+        protected override void PrepareForShiftTo(int slideIndex)
         {
-            if (dataSource.None()) return;
-            if (CurrentSlideIndex > 0)
-            {
-                // Is there a slide at the left side to show the previous item?
-                if (Item(LeftSlide)?.Value == dataSource[0])
+            if (dataSource.None() || slideIndex == -1) return;
 
-            }
-
-            if (DataSource.ElementAtOrDefault(CurrentSlideIndex) == Item(SecondSlide)?.Value)
+            if (DataSource.ElementAtOrDefault(slideIndex) == Item(SecondSlide)?.Value)
                 return; // Ideal location. No reposition necessary.
 
-            var leftItem = Item(LeftSlide)?.Value;
+            if (slideIndex < CurrentSlideIndex) PrepareForShiftBack(slideIndex);
 
-            if (CurrentSlideIndex <= dataSource.IndexOf(leftItem))
-            {
-                if (CurrentSlideIndex <= 0) return;
+            if (slideIndex > CurrentSlideIndex && LeftSlide.ActualX + SlideWidth < -SlidesContainer.ActualX)
+                PrepareForShiftForward(slideIndex);
+        }
 
-                var item = DataSource.ElementAtOrDefault(CurrentSlideIndex - 1);
-                if (item == null) return;
+        void PrepareForShiftBack(int slideIndex)
+        {
+            var leftSlideIndex = dataSource.IndexOf(Item(LeftSlide)?.Value);
+            if (leftSlideIndex <= 0) return;
+            if (leftSlideIndex < slideIndex) return;
 
-                // Move right to left
-                var toRecycle = RightSlide;
-                if (toRecycle == null) return;
-                Item(toRecycle).Set(item);
-                toRecycle.X(SlideWidth * CurrentSlideIndex - 1);
+            var item = DataSource.ElementAtOrDefault(slideIndex - 1);
+            if (item == null) return;
 
-            }
-            else
-            {
-                // Move far-left slide to far-right position
-                var item = Item(RightSlide)?.Value;
-                if (item == null) return;
-                item = dataSource.SkipWhile(x => x != item).Skip(1).FirstOrDefault();
-                if (item == null) return;
+            // Move right to left
+            var toRecycle = RightSlide;
+            if (toRecycle == null) return;
+            Item(toRecycle).Set(item);
+            toRecycle.X(SlideWidth * (slideIndex - 1));
+        }
 
-                var toRecycle = LeftSlide;
-                Item(toRecycle).Set(item);
-                toRecycle.X(RightSlide.ActualRight);
-                await EnsureMiddleSlideIsCurrent();
-            }
+        void PrepareForShiftForward(int slideIndex)
+        {
+            // Move far-left slide to far-right position
+            var item = Item(RightSlide)?.Value;
+            if (item == null) return;
+            item = dataSource.SkipWhile(x => x != item).Skip(1).FirstOrDefault();
+            if (item == null) return;
 
-            // Slide positions:
-            Device.Log.Message("Slide positions: " + OrderedSlides
-                .Select(v => v.ActualX + " (" + dataSource.IndexOf(Item(v).Value) + ")").ToString("    "));
+            var toRecycle = LeftSlide;
+            Item(toRecycle).Set(item);
+            toRecycle.X(RightSlide.ActualRight);
         }
 
         protected override int CountSlides() => dataSource.Length;

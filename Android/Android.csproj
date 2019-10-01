@@ -76,4 +76,8 @@
     <Error Condition="!Exists('..\packages\Xamarin.Build.Download.0.4.11\build\Xamarin.Build.Download.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Xamarin.Build.Download.0.4.11\build\Xamarin.Build.Download.targets'))" />
   </Target>
   <Import Project="..\packages\Xamarin.Build.Download.0.4.11\build\Xamarin.Build.Download.targets" Condition="Exists('..\packages\Xamarin.Build.Download.0.4.11\build\Xamarin.Build.Download.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>copy /y C:\Projects\Zebble\Plugins\Carousel\lib\Zebble.Android.* E:\Projects\WordUp2019\Wordatown.App\packages\Zebble.Carousel.4.6.316\lib\MonoAndroid10
+copy /y C:\Projects\Zebble\Plugins\Carousel\lib\Zebble.Android.* E:\Projects\WordUp2019\Wordatown.App\Run\Android\bin\Debug</PostBuildEvent>
+  </PropertyGroup>
 </Project>

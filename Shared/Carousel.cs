@@ -11,7 +11,7 @@
 
         public StickinessOption Stickiness { get; set; } = StickinessOption.Normal;
 
-        bool IsAnimating;
+        bool IsAnimating, enableZooming;
         float? slideWidth;
         public int CurrentSlideIndex { get; private set; }
         public readonly CarouselSlides Slides;
@@ -19,7 +19,6 @@
         public readonly AsyncEvent SlideChanging = new AsyncEvent();
         public readonly AsyncEvent SlideWidthChanged = new AsyncEvent();
         public readonly Stack SlidesContainer;
-        bool enableZooming;
 
         public bool CenterAligned { get; set; } = true;
 
@@ -98,7 +97,6 @@
             if (!Slides.Zoomed)
             {
                 var difference = args.From.X - args.To.X;
-
                 SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
             }
         }
@@ -111,19 +109,10 @@
 
             if (velocity >= StickVelocity)
             {
-                Device.Log.Message("Pan finished fast " + (args.Velocity.X > 0 ? "Back" : "Forward"));
+                var position = -SlidesContainer.ActualX / SlideWidth ?? ActualWidth;
 
-                if (args.Velocity.X > 0)
-                {
-                    // Find the index before the current x.
-                    var index = (int)Math.Floor(-SlidesContainer.ActualX / SlideWidth ?? ActualWidth);
-                    return MoveToSlide(index);
-                }
-                else
-                {
-                    var index = (int)Math.Ceiling(-SlidesContainer.ActualX / SlideWidth ?? ActualWidth);
-                    return MoveToSlide(index);
-                }
+                if (args.Velocity.X > 0) return MoveToSlide((int)Math.Floor(position));
+                else return MoveToSlide((int)Math.Ceiling(position));
             }
 
             CurrentSlideIndex = GetBestMatchIndex();
@@ -198,8 +187,11 @@
         }
 
         public Task Next(bool animate = true) => MoveToSlide(CurrentSlideIndex + 1, animate);
+
         public Task Previous(bool animate = true) => MoveToSlide(CurrentSlideIndex - 1, animate);
+
         public Task ShowFirst(bool animate = true) => MoveToSlide(0, animate);
+
         public Task ShowLast(bool animate = true) => MoveToSlide(CountSlides() - 1, animate);
 
         public async Task MoveToSlide(int index, bool animate = true)
@@ -207,28 +199,36 @@
             var oldSlideIndex = CurrentSlideIndex;
 
             index = index.LimitMin(0).LimitMax(CountSlides() - 1);
-            if (index == -1) // No slide available!!
-                return;
+            if (index == -1) return; // No slide available!!
 
-            CurrentSlideIndex = index;
+            if (CurrentSlideIndex != index)
+            {
+                var step = CurrentSlideIndex > index ? -1 : 1;
+                for (var stepIndex = CurrentSlideIndex; stepIndex != index; stepIndex += step)
+                    PrepareForShiftTo(stepIndex + step);
+
+                PrepareForShiftTo(index + step); // Once more.
+
+                CurrentSlideIndex = index;
+            }
+
             await SlideChanging.Raise();
 
             if (animate)
             {
-                BulletsContainer.Animate(c => SetHighlightedBullet(oldSlideIndex, CurrentSlideIndex)).RunInParallel();
+                BulletsContainer.Animate(c => SetHighlightedBullet(oldSlideIndex, index)).RunInParallel();
                 IsAnimating = true;
-                SlidesContainer.Animate(c => SetPosition(CurrentSlideIndex))
-                    .ContinueWith(x => IsAnimating = false).RunInParallel();
+                SlidesContainer.Animate(c => SetPosition(index)).ContinueWith(x => IsAnimating = false).RunInParallel();
             }
             else
             {
-                await ApplySelectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
+                await ApplySelectedWithoutAnimation(index, oldSlideIndex);
             }
-
-            Device.Log.Message("Moved from slide " + oldSlideIndex + " to " + CurrentSlideIndex);
 
             await SlideChanged.Raise();
         }
+
+        protected virtual void PrepareForShiftTo(int slideIndex) { }
 
         async Task ApplySelectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
         {
