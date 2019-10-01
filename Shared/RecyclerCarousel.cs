@@ -14,7 +14,8 @@
 
         public RecyclerCarousel()
         {
-            SlideChanging.Handle(OnSlideChanging);
+            SlideChanging.Handle(CreateReserveSlides);
+            SlideChanged.Handle(EnsureMiddleSlideIsCurrent);
             SlideWidthChanged.Handle(OnSlideWidthChanged);
         }
 
@@ -38,24 +39,27 @@
 
             if (IsInitialized)
             {
-                if (dataSource.Any()) await CreateOrUpdateSlide(LeftSlide, 0);
-                if (dataSource.HasMany()) await CreateOrUpdateSlide(SecondSlide, 1);
-                if (dataSource.Length > 2) await CreateOrUpdateSlide(RightSlide, 2);
+                var currentSlides = OrderedSlides.ToArray();
 
-                if (RightSlide != null && dataSource.Length < 3) await RightSlide.RemoveSelf();
-                if (SecondSlide != null && dataSource.Length < 2) await SecondSlide.RemoveSelf();
-                if (LeftSlide != null && dataSource.None()) await LeftSlide.RemoveSelf();
+                await UIWorkBatch.Run(async () =>
+                {
+                    for (var i = currentSlides.Length - 1; i >= 0; i--)
+                    {
+                        var slide = currentSlides[i];
+                        if (dataSource.Length < i) await slide.RemoveSelf();
+                        else
+                        {
+                            Item(slide).Value = dataSource[i];
+                            slide.X(i * SlideWidth);
+                        }
+                    }
 
-                ShowFirst(animate: false);
+                    for (var i = currentSlides.Length; i < MaxNeededSlides && i < dataSource.Length; i++)
+                        await CreateSlide(dataSource[i]);
+
+                    await ShowFirst(animate: false);
+                });
             }
-        }
-
-        async Task CreateOrUpdateSlide(View view, int index)
-        {
-            var item = dataSource[index];
-            if (view is null) view = await CreateSlide(item);
-            else Item(view).Value = item;
-            view.X(index * SlideWidth);
         }
 
         public override async Task OnPreRender()
@@ -74,11 +78,11 @@
             return result.X(result.ActualX);
         }
 
-        View LeftSlide => SlidesContainer.AllChildren.OrderBy(v => v.ActualRight).FirstOrDefault();
-        View SecondSlide => SlidesContainer.AllChildren.OrderBy(v => v.ActualRight).ExceptFirst().FirstOrDefault();
-        View RightSlide => SlidesContainer.AllChildren.OrderBy(v => v.ActualRight).Skip(MaxNeededSlides - 1).FirstOrDefault();
+        IEnumerable<View> OrderedSlides => SlidesContainer.AllChildren.OrderBy(v => v.ActualX);
 
-        TSource CurrentItem => DataSource.ElementAtOrDefault(CurrentSlideIndex);
+        View LeftSlide => OrderedSlides.FirstOrDefault();
+        View SecondSlide => OrderedSlides.ExceptFirst().FirstOrDefault();
+        View RightSlide => OrderedSlides.Skip(MaxNeededSlides - 1).FirstOrDefault();
 
         Bindable<TSource> Item(View slide) => slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().Single().Item;
 
@@ -95,16 +99,16 @@
             }
         }
 
-        async Task OnSlideChanging()
+        async Task CreateReserveSlides()
         {
-            if (CurrentSlideIndex > 0 && SlidesContainer.AllChildren.Count < MaxNeededSlides)
+            if (CurrentSlideIndex <= 0) return;
+            while (SlidesContainer.AllChildren.Count < MaxNeededSlides &&
+                dataSource.Length > SlidesContainer.AllChildren.Count)
             {
                 // Create the next slide
                 foreach (var item in DataSource.Skip(SlidesContainer.AllChildren.Count).Take(1))
                     await CreateSlide(item);
             }
-
-            await EnsureMiddleSlideIsCurrent();
         }
 
         async Task OnSlideWidthChanged()
@@ -112,20 +116,31 @@
             if (!IsInitialized) return;
 
             var index = 0;
-            foreach (var item in SlidesContainer.AllChildren.OrderBy(v => v.ActualX).ToArray())
+            foreach (var item in OrderedSlides.ToArray())
             {
                 await OnUI(() => item.X(index * SlideWidth).Width(SlideWidth));
                 index++;
             }
         }
 
-        Task OnUI(Action action) => Zebble.UIWorkBatch.Run(action);
+        Task OnUI(Action action) => UIWorkBatch.Run(action);
 
         async Task EnsureMiddleSlideIsCurrent()
         {
-            if (Item(SecondSlide)?.Value == CurrentItem) return;
+            if (dataSource.None()) return;
+            if (CurrentSlideIndex > 0)
+            {
+                // Is there a slide at the left side to show the previous item?
+                if (Item(LeftSlide)?.Value == dataSource[0])
 
-            if (CurrentItem == Item(LeftSlide)?.Value)
+            }
+
+            if (DataSource.ElementAtOrDefault(CurrentSlideIndex) == Item(SecondSlide)?.Value)
+                return; // Ideal location. No reposition necessary.
+
+            var leftItem = Item(LeftSlide)?.Value;
+
+            if (CurrentSlideIndex <= dataSource.IndexOf(leftItem))
             {
                 if (CurrentSlideIndex <= 0) return;
 
@@ -136,21 +151,26 @@
                 var toRecycle = RightSlide;
                 if (toRecycle == null) return;
                 Item(toRecycle).Set(item);
-                var rightSide = LeftSlide.ActualX - SlideWidth;
-                await OnUI(() => toRecycle.X(rightSide));
+                toRecycle.X(SlideWidth * CurrentSlideIndex - 1);
+
             }
             else
             {
                 // Move far-left slide to far-right position
                 var item = Item(RightSlide)?.Value;
-                if (item != null) item = dataSource.SkipWhile(x => x != item).Skip(1).FirstOrDefault();
-                if (item != null)
-                {
-                    var toRecycle = LeftSlide;
-                    Item(toRecycle).Set(item);
-                    await OnUI(() => toRecycle.X(RightSlide.ActualRight));
-                }
+                if (item == null) return;
+                item = dataSource.SkipWhile(x => x != item).Skip(1).FirstOrDefault();
+                if (item == null) return;
+
+                var toRecycle = LeftSlide;
+                Item(toRecycle).Set(item);
+                toRecycle.X(RightSlide.ActualRight);
+                await EnsureMiddleSlideIsCurrent();
             }
+
+            // Slide positions:
+            Device.Log.Message("Slide positions: " + OrderedSlides
+                .Select(v => v.ActualX + " (" + dataSource.IndexOf(Item(v).Value) + ")").ToString("    "));
         }
 
         protected override int CountSlides() => dataSource.Length;

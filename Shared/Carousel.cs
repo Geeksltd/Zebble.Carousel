@@ -111,8 +111,19 @@
 
             if (velocity >= StickVelocity)
             {
-                if (args.Velocity.X > 0) return Previous();
-                else return Next();
+                Device.Log.Message("Pan finished fast " + (args.Velocity.X > 0 ? "Back" : "Forward"));
+
+                if (args.Velocity.X > 0)
+                {
+                    // Find the index before the current x.
+                    var index = (int)Math.Floor(-SlidesContainer.ActualX / SlideWidth ?? ActualWidth);
+                    return MoveToSlide(index);
+                }
+                else
+                {
+                    var index = (int)Math.Ceiling(-SlidesContainer.ActualX / SlideWidth ?? ActualWidth);
+                    return MoveToSlide(index);
+                }
             }
 
             CurrentSlideIndex = GetBestMatchIndex();
@@ -186,46 +197,22 @@
             AdjustContainerWidth();
         }
 
-        public async Task Next(bool animate = true)
+        public Task Next(bool animate = true) => MoveToSlide(CurrentSlideIndex + 1, animate);
+        public Task Previous(bool animate = true) => MoveToSlide(CurrentSlideIndex - 1, animate);
+        public Task ShowFirst(bool animate = true) => MoveToSlide(0, animate);
+        public Task ShowLast(bool animate = true) => MoveToSlide(CountSlides() - 1, animate);
+
+        public async Task MoveToSlide(int index, bool animate = true)
         {
             var oldSlideIndex = CurrentSlideIndex;
-            CurrentSlideIndex++;
 
-            if (CurrentSlideIndex >= CountSlides() - 1) CurrentSlideIndex = CountSlides() - 1;
+            index = index.LimitMin(0).LimitMax(CountSlides() - 1);
+            if (index == -1) // No slide available!!
+                return;
+
+            CurrentSlideIndex = index;
             await SlideChanging.Raise();
-            await MoveSlide(animate, oldSlideIndex);
-            await SlideChanged.Raise();
-        }
 
-        public async Task Previous(bool animate = true)
-        {
-            var oldSlideIndex = CurrentSlideIndex;
-            CurrentSlideIndex--;
-
-            if (CurrentSlideIndex <= 0) CurrentSlideIndex = 0;
-            await SlideChanging.Raise();
-            await MoveSlide(animate, oldSlideIndex);
-            await SlideChanged.Raise();
-        }
-
-        public async Task ShowFirst(bool animate = true)
-        {
-            var oldSlideIndex = CurrentSlideIndex;
-            CurrentSlideIndex = 0;
-
-            await MoveSlide(animate, oldSlideIndex);
-        }
-
-        public async Task ShowLast(bool animate = true)
-        {
-            var oldSlideIndex = CurrentSlideIndex;
-            CurrentSlideIndex = CountSlides() - 1;
-
-            await MoveSlide(animate, oldSlideIndex);
-        }
-
-        async Task MoveSlide(bool animate, int oldSlideIndex)
-        {
             if (animate)
             {
                 BulletsContainer.Animate(c => SetHighlightedBullet(oldSlideIndex, CurrentSlideIndex)).RunInParallel();
@@ -237,6 +224,10 @@
             {
                 await ApplySelectedWithoutAnimation(CurrentSlideIndex, oldSlideIndex);
             }
+
+            Device.Log.Message("Moved from slide " + oldSlideIndex + " to " + CurrentSlideIndex);
+
+            await SlideChanged.Raise();
         }
 
         async Task ApplySelectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
