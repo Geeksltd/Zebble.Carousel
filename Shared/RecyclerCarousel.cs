@@ -45,7 +45,7 @@
                     for (var i = currentSlides.Length - 1; i >= 0; i--)
                     {
                         var slide = currentSlides[i];
-                        if (dataSource.Length < i) await slide.RemoveSelf();
+                        if (dataSource.Length <= i) await slide.RemoveSelf();
                         else
                         {
                             Item(slide).Value = dataSource[i];
