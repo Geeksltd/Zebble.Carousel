@@ -18,6 +18,9 @@
         public readonly AsyncEvent SlideChanged = new AsyncEvent();
         public readonly AsyncEvent SlideChanging = new AsyncEvent();
         public readonly AsyncEvent SlideWidthChanged = new AsyncEvent();
+
+        public bool ShowBullets { get; set; } = true;
+
         public readonly Stack SlidesContainer;
 
         public bool CenterAligned { get; set; } = true;
@@ -86,8 +89,8 @@
 
             await WhenShown(() => ApplySelectedWithoutAnimation(0, 0));
 
-            Panning.Handle(OnPanning);
-            PanFinished.Handle(OnPanFinished);
+            Panning.HandleOn(Thread.UI, OnPanning);
+            PanFinished.HandleOn(Thread.UI, OnPanFinished);
         }
 
         async Task OnPanning(PannedEventArgs args)
@@ -98,8 +101,11 @@
             {
                 var difference = args.From.X - args.To.X;
                 SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
+                await PrepareForShiftTo(GetBestMatchIndex());
             }
         }
+
+        public int ConcurrentlyVisibleSlides => (int)Math.Ceiling(ActualWidth / SlideWidth.Value);
 
         Task OnPanFinished(PannedEventArgs args)
         {
@@ -173,7 +179,7 @@
             child.VisibilityChanged.Handle(() => slide.Visible = child.Visible);
         }
 
-        public async Task RemoveSlide(View child)
+        public virtual async Task RemoveSlide(View child)
         {
             if (child.Parent == null)
             {
@@ -203,12 +209,7 @@
 
             if (CurrentSlideIndex != index)
             {
-                var step = CurrentSlideIndex > index ? -1 : 1;
-                for (var stepIndex = CurrentSlideIndex; stepIndex != index; stepIndex += step)
-                    PrepareForShiftTo(stepIndex + step);
-
-                PrepareForShiftTo(index + step); // Once more.
-
+                await PrepareForShiftTo(index);
                 CurrentSlideIndex = index;
             }
 
@@ -216,7 +217,8 @@
 
             if (animate)
             {
-                BulletsContainer.Animate(c => SetHighlightedBullet(oldSlideIndex, index)).RunInParallel();
+                if (ShowBullets)
+                    BulletsContainer.Animate(c => SetHighlightedBullet(oldSlideIndex, index)).RunInParallel();
                 IsAnimating = true;
                 SlidesContainer.Animate(c => SetPosition(index)).ContinueWith(x => IsAnimating = false).RunInParallel();
             }
@@ -228,7 +230,7 @@
             await SlideChanged.Raise();
         }
 
-        protected virtual void PrepareForShiftTo(int slideIndex) { }
+        protected virtual Task PrepareForShiftTo(int slideIndex) => Task.CompletedTask;
 
         async Task ApplySelectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
         {
@@ -236,11 +238,21 @@
             await ApplySelectedBullet();
         }
 
-        protected void SetPosition(int currentIndex) => SlidesContainer.X(XPositionOffset - currentIndex * InternalSlideWidth);
+        protected void SetPosition(int currentIndex)
+        {
+            currentIndex = currentIndex.LimitMax(CountSlides() + 1 - ConcurrentlyVisibleSlides).LimitMin(0);
+
+            var x = XPositionOffset - currentIndex * InternalSlideWidth;
+
+            SlidesContainer.X(x);
+        }
 
         public float XPositionOffset => CenterAligned ? (ActualWidth - InternalSlideWidth) / 2 : 0;
 
-        public class Slide : Stack { }
+        public class Slide : Stack
+        {
+            public override string ToString() => base.ToString() + " > " + AllChildren.FirstOrDefault();
+        }
 
         public class ZoomableSlide : ScrollView { }
 
