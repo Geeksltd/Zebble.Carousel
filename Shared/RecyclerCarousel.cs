@@ -175,7 +175,7 @@
             try
             {
                 BusyPreparingFor = slideIndex;
-                var min = slideIndex - 1;
+                var min = (slideIndex - 1).LimitMin(0);
                 var max = (slideIndex + ConcurrentlyVisibleSlides).LimitMax(dataSource.Length);
 
                 for (var i = min; i <= max; i++)
@@ -186,7 +186,7 @@
 
         async Task RenderSlideAt(int slideIndex)
         {
-            if (dataSource.None() || slideIndex < 0) return;
+            if (dataSource == null) return;
 
             var dataItem = DataSource.ElementAtOrDefault(slideIndex);
             if (dataItem == null) return;
@@ -195,7 +195,7 @@
             var slidesAtPosition = SlidesContainer.AllChildren.Where(v => v.X.CurrentValue == slideX).ToArray();
 
             foreach (var extra in slidesAtPosition.ExceptFirst().ToArray())
-                Device.Log.Error("More than one Slide found for " + slideX);
+                Device.Log.Error("Multiple slides at position " + slideX);
 
             var slide = slidesAtPosition.FirstOrDefault();
             if (slide != null) return;
@@ -225,6 +225,6 @@
             else return fromRight() ?? fromLeft();
         }
 
-        protected override int CountSlides() => dataSource.Length;
+        public override int CountSlides() => dataSource.Length;
     }
 }

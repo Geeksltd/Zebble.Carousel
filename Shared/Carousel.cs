@@ -1,6 +1,7 @@
 ﻿namespace Zebble.Plugin
 {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
 
     public partial class Carousel : Stack
@@ -15,13 +16,12 @@
         float? slideWidth;
         public int CurrentSlideIndex { get; private set; }
         public readonly CarouselSlides Slides;
+        public readonly SlidesContainer SlidesContainer = new SlidesContainer();
         public readonly AsyncEvent SlideChanged = new AsyncEvent();
         public readonly AsyncEvent SlideChanging = new AsyncEvent();
         public readonly AsyncEvent SlideWidthChanged = new AsyncEvent();
 
         public bool ShowBullets { get; set; } = true;
-
-        public readonly Stack SlidesContainer;
 
         public bool CenterAligned { get; set; } = true;
 
@@ -41,7 +41,7 @@
             set
             {
                 slideWidth = value;
-                SlidesContainer.AllChildren.Do(x => x.Width(slideWidth));
+                SlidesContainer.ArrangeSlides(value ?? ActualWidth);
                 SlideWidthChanged?.Raise();
             }
         }
@@ -65,7 +65,6 @@
         {
             Height.Set(DEFAULT_HEIGHT);
             BulletsContainer = new Stack(RepeatDirection.Horizontal).Id("BulletsContainer").Absolute().Visible(value: false);
-            SlidesContainer = new Stack(RepeatDirection.Horizontal).Id("SlidesContainer").Height(100.Percent());
             Slides = new CarouselSlides(this);
         }
 
@@ -84,13 +83,21 @@
             await base.OnInitializing();
 
             await Add(SlidesContainer);
+            SlidesContainer.ArrangeSlides(SlideWidth ?? ActualWidth);
+
             await CreateBulletContainer();
             await ApplySelectedBullet();
 
-            await WhenShown(() => ApplySelectedWithoutAnimation(0, 0));
+            await WhenShown(OnShown);
 
             Panning.HandleOn(Thread.UI, OnPanning);
             PanFinished.HandleOn(Thread.UI, OnPanFinished);
+        }
+
+        async Task OnShown()
+        {
+            await ApplySelectedWithoutAnimation(0, 0);
+            await PrepareForShiftTo(1);
         }
 
         async Task OnPanning(PannedEventArgs args)
@@ -141,7 +148,7 @@
             AdjustContainerWidth();
         }
 
-        protected virtual int CountSlides() => Slides.Count;
+        public virtual int CountSlides() => SlidesContainer.CurrentChildren.Count();
 
         protected void AdjustContainerWidth() => SlidesContainer.Width(CountSlides() * InternalSlideWidth);
 
@@ -153,10 +160,8 @@
             if (EnableZooming) slide = new ZoomableSlide() { EnableZooming = true };
             else slide = new Slide();
 
-            slide.Width(InternalSlideWidth);
-
-            await slide.Add(child);
             await SlidesContainer.Add(slide);
+            await slide.Add(child);
             await AddBullet();
 
             HandleVisibility(child, slide);
