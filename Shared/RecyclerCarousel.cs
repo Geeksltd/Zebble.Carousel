@@ -76,8 +76,8 @@
             {
                 var created = SlidesContainer.AllChildren.Count;
 
-                var slideX = SlideWidth.Value * created;
-                if (slideX > ActualWidth + SlideWidth.Value) return;
+                var slideX = InternalSlideWidth * created;
+                if (slideX > ActualWidth + InternalSlideWidth) return;
 
                 var nextItem = dataSource.ElementAtOrDefault(created);
                 if (nextItem == null) return;
@@ -210,14 +210,14 @@
             View fromLeft()
             {
                 var farLeft = OrderedSlides.FirstOrDefault();
-                var keepDownTo = -SlidesContainer.X.CurrentValue - SlideWidth.Value;
+                var keepDownTo = -SlidesContainer.X.CurrentValue - InternalSlideWidth;
                 return farLeft?.ActualX < keepDownTo ? farLeft : null;
             }
 
             View fromRight()
             {
                 var farRight = OrderedSlides.LastOrDefault();
-                var keepUpTo = SlideWidth.Value * ConcurrentlyVisibleSlides - SlidesContainer.X.CurrentValue;
+                var keepUpTo = InternalSlideWidth * ConcurrentlyVisibleSlides - SlidesContainer.X.CurrentValue;
                 return farRight?.ActualX > keepUpTo ? farRight : null;
             }
 

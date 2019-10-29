@@ -112,7 +112,7 @@
             }
         }
 
-        public int ConcurrentlyVisibleSlides => (int)Math.Ceiling(ActualWidth / SlideWidth.Value);
+        public int ConcurrentlyVisibleSlides => (int)Math.Ceiling(ActualWidth / InternalSlideWidth);
 
         Task OnPanFinished(PannedEventArgs args)
         {
@@ -152,7 +152,7 @@
 
         protected void AdjustContainerWidth() => SlidesContainer.Width(CountSlides() * InternalSlideWidth);
 
-        float InternalSlideWidth => SlideWidth ?? ActualWidth;
+        protected float InternalSlideWidth => SlideWidth ?? ActualWidth;
 
         public async Task<View> AddSlide(View child)
         {
