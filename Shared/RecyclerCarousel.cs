@@ -139,7 +139,7 @@
 
             if (result == null)
             {
-                await base.AddBullet();
+                if (SlidesContainer.AllChildren.Count < dataSource.Length) await base.AddBullet();
                 return;
             }
 
