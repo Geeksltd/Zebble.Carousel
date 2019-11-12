@@ -70,6 +70,8 @@
                 }
         }
 
+        protected override bool ShouldAddBulletWithSlide() => false; // Bullets are added with data source
+
         async Task CreateSufficientSlides()
         {
             while (true)
@@ -192,6 +194,9 @@
             if (dataItem == null) return;
 
             var slideX = slideIndex * SlideWidth;
+
+            var xx = SlidesContainer.AllChildren.Select(v => v.X.CurrentValue).ToArray();
+
             var slidesAtPosition = SlidesContainer.AllChildren.Where(v => v.X.CurrentValue == slideX).ToArray();
 
             foreach (var extra in slidesAtPosition.ExceptFirst().ToArray())

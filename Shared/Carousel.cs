@@ -162,13 +162,16 @@
 
             await SlidesContainer.Add(slide);
             await slide.Add(child);
-            await AddBullet();
+
+            if (ShouldAddBulletWithSlide()) await AddBullet();
 
             HandleVisibility(child, slide);
             AdjustContainerWidth();
 
             return slide;
         }
+
+        protected virtual bool ShouldAddBulletWithSlide() => true;
 
         void HandleVisibility(View child, View slide)
         {
