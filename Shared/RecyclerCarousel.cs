@@ -178,7 +178,7 @@
             {
                 BusyPreparingFor = slideIndex;
                 var min = (slideIndex - 1).LimitMin(0);
-                var max = (slideIndex + ConcurrentlyVisibleSlides).LimitMax(dataSource.Length);
+                var max = (min + ConcurrentlyVisibleSlides).LimitMax(dataSource.Length);
 
                 for (var i = min; i <= max; i++)
                     await RenderSlideAt(i);
@@ -194,8 +194,6 @@
             if (dataItem == null) return;
 
             var slideX = slideIndex * SlideWidth;
-
-            var xx = SlidesContainer.AllChildren.Select(v => v.X.CurrentValue).ToArray();
 
             var slidesAtPosition = SlidesContainer.AllChildren.Where(v => v.X.CurrentValue == slideX).ToArray();
 
