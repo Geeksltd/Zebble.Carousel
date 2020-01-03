@@ -165,7 +165,7 @@
 
             if (ShouldAddBulletWithSlide()) await AddBullet();
 
-            HandleVisibility(child, slide);
+            await HandleVisibility(child, slide);
             AdjustContainerWidth();
 
             return slide;
@@ -173,14 +173,14 @@
 
         protected virtual bool ShouldAddBulletWithSlide() => true;
 
-        void HandleVisibility(View child, View slide)
+        async Task HandleVisibility(View child, View slide)
         {
-            slide.Ignored = child.Ignored;
+            await slide.IgnoredAsync(child.Ignored);
             slide.Visible = child.Visible;
 
-            child.IgnoredChanged.Handle(x =>
+            child.IgnoredChanged.Handle(async x =>
             {
-                slide.Ignored = x.Value;
+                await slide.IgnoredAsync(x.Value);
                 AdjustContainerWidth();
             });
 

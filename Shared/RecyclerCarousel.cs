@@ -65,7 +65,8 @@
                     var bullet = BulletsContainer.AllChildren.LastOrDefault();
                     if (bullet == null) continue;
 
-                    await bullet.Ignored().MoveTo(Root);
+                    await bullet.IgnoredAsync();
+                    await bullet.MoveTo(Root);
                     BulletRecycleBin.Add(bullet);
                 }
         }
@@ -93,7 +94,8 @@
             return UIWorkBatch.Run(async () =>
            {
                // Recycle it instead.
-               await slide.Ignored().MoveTo(Root);
+               await slide.IgnoredAsync();
+               await slide.MoveTo(Root);
                SlideRecycleBin.Add(slide);
            });
         }
@@ -115,7 +117,8 @@
                  if (result != null)
                  {
                      SlideRecycleBin.Remove(result);
-                     await result.Ignored(false).MoveTo(SlidesContainer);
+                     await result.IgnoredAsync(false);
+                     await result.MoveTo(SlidesContainer);
                      Item(result).Set(item);
                      result.X(dataSource.IndexOf(item) * SlideWidth);
                  }
@@ -144,7 +147,8 @@
             }
 
             BulletRecycleBin.Remove(result);
-            await result.Ignored(false).MoveTo(BulletsContainer);
+            await result.IgnoredAsync(false);
+            await result.MoveTo(BulletsContainer);
             if (BulletsContainer.CurrentChildren.Count() > 1) BulletsContainer.Visible();
         }
 
