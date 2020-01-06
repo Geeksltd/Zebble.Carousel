@@ -259,7 +259,7 @@
 
         public class Slide : Stack
         {
-            public override string ToString() => base.ToString() + " > " + AllChildren.FirstOrDefault();
+            public override string ToString() => base.ToString() + " > " + AllChildren.LastOrDefault();
         }
 
         public class ZoomableSlide : ScrollView { }
