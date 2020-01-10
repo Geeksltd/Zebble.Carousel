@@ -190,26 +190,40 @@
             finally { BusyPreparingFor = null; }
         }
 
-        async Task RenderSlideAt(int slideIndex)
+        public Task<View> GetOrCreateCurrentSlide() => RenderSlideAt(CurrentSlideIndex);
+
+        readonly AsyncLock RenderSlideLock = new AsyncLock();
+
+        async Task<View> RenderSlideAt(int slideIndex)
         {
-            if (dataSource == null) return;
+            if (dataSource == null) return null;
 
-            var dataItem = DataSource.ElementAtOrDefault(slideIndex);
-            if (dataItem == null) return;
+            using (await RenderSlideLock.LockAsync())
+            {
+                var dataItem = DataSource.ElementAtOrDefault(slideIndex);
+                if (dataItem == null) return null;
 
-            var slideX = slideIndex * SlideWidth;
+                var slideX = slideIndex * SlideWidth;
 
-            var slidesAtPosition = SlidesContainer.AllChildren.Where(v => v.X.CurrentValue == slideX).ToArray();
+                var slidesAtPosition = SlidesContainer.AllChildren.Where(v => v.X.CurrentValue == slideX).ToArray();
 
-            foreach (var extra in slidesAtPosition.ExceptFirst().ToArray())
-                Device.Log.Error("Multiple slides at position " + slideX);
+                foreach (var extra in slidesAtPosition.ExceptFirst().ToArray())
+                    Device.Log.Error("Multiple slides at position " + slideX);
 
-            var slide = slidesAtPosition.FirstOrDefault();
-            if (slide != null) return;
+                var slide = slidesAtPosition.FirstOrDefault();
+                if (slide != null) return slide;
 
-            slide = GetRecyclableSlide(favourLeft: slideIndex > CurrentSlideIndex);
-            if (slide != null) Item(slide.X(slideX)).Set(dataItem);
-            else await CreateSlide(dataItem);
+                slide = GetRecyclableSlide(favourLeft: slideIndex > CurrentSlideIndex);
+                if (slide != null)
+                {
+                    Item(slide.X(slideX)).Set(dataItem);
+                    return slide;
+                }
+                else
+                {
+                    return await CreateSlide(dataItem);
+                }
+            }
         }
 
         View GetRecyclableSlide(bool favourLeft)

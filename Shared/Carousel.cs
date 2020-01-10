@@ -90,8 +90,9 @@
 
             await WhenShown(OnShown);
 
-            Panning.HandleOn(Thread.UI, OnPanning);
-            PanFinished.HandleOn(Thread.UI, OnPanFinished);
+            RaiseGesturesOnUIThread();
+            Panning.Handle(OnPanning);
+            PanFinished.Handle(OnPanFinished);
         }
 
         async Task OnShown()
@@ -100,39 +101,44 @@
             await PrepareForShiftTo(1);
         }
 
-        async Task OnPanning(PannedEventArgs args)
+        Task OnPanning(PannedEventArgs args)
         {
-            if (IsAnimating) return;
+            if (IsAnimating) return Task.CompletedTask;
 
             if (!Slides.Zoomed)
             {
                 var difference = args.From.X - args.To.X;
                 SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
-                await PrepareForShiftTo(GetBestMatchIndex());
+                return PrepareForShiftTo(GetBestMatchIndex());
             }
+
+            return Task.CompletedTask;
         }
 
         public int ConcurrentlyVisibleSlides => (int)Math.Ceiling(ActualWidth / InternalSlideWidth);
 
-        Task OnPanFinished(PannedEventArgs args)
+        async Task OnPanFinished(PannedEventArgs args)
         {
-            if (Slides.Zoomed) return Task.CompletedTask;
+            if (Slides.Zoomed) return;
 
-            var velocity = Math.Abs(args.Velocity.X);
+            var fast = Math.Abs(args.Velocity.X) >= StickVelocity;
 
-            if (velocity >= StickVelocity)
+            if (fast)
             {
                 var position = -SlidesContainer.ActualX / SlideWidth ?? ActualWidth;
 
-                if (args.Velocity.X > 0) return MoveToSlide((int)Math.Floor(position));
-                else return MoveToSlide((int)Math.Ceiling(position));
+                if (args.Velocity.X > 0) await MoveToSlide((int)Math.Floor(position));
+                else await MoveToSlide((int)Math.Ceiling(position));
             }
-
-            CurrentSlideIndex = GetBestMatchIndex();
-
-            IsAnimating = true;
-            return SlidesContainer.Animate(x => SetPosition(CurrentSlideIndex))
-                .ContinueWith(x => IsAnimating = false);
+            else
+            {
+                var was = CurrentSlideIndex;
+                CurrentSlideIndex = GetBestMatchIndex();
+                await SlideChanging.Raise();
+                IsAnimating = true;
+                SlidesContainer.Animate(x => SetPosition(CurrentSlideIndex)).ContinueWith(x => IsAnimating = false).RunInParallel();
+                await SlideChanged.Raise();
+            }
         }
 
         int GetBestMatchIndex()
