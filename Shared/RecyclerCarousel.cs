@@ -54,6 +54,7 @@
 
             if (!IsInitialized) return;
 
+            IsInitializingSlides = true;
             var currentSlides = OrderedSlides.ToArray();
             for (var i = 0; i < currentSlides.Length; i++)
             {
@@ -175,7 +176,21 @@
             if (BulletsContainer.CurrentChildren.Count() > 1) BulletsContainer.Visible();
         }
 
-        IRecyclerCarouselSlide<TSource> GetTemplate(View slide) => slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().Single();
+        IRecyclerCarouselSlide<TSource> GetTemplate(View slide)
+        {
+            if (slide == null) return null;
+            try
+            {
+                return slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().Single();
+            }
+            catch
+            {
+                foreach (var child in slide.AllChildren)
+                    if (!(child is IRecyclerCarouselSlide<TSource>))
+                        Zebble.Device.Log.Error(child.GetType().FullName + " is not " + typeof(IRecyclerCarouselSlide<TSource>).GetProgrammingName());
+                return null;
+            }
+        }
 
         Bindable<TSource> Item(View slide) => GetTemplate(slide)?.Item;
 

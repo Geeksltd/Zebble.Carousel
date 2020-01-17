@@ -120,25 +120,17 @@
         async Task OnPanFinished(PannedEventArgs args)
         {
             if (Slides.Zoomed) return;
+            var landOn = GetBestMatchIndex();
 
             var fast = Math.Abs(args.Velocity.X) >= StickVelocity;
-
             if (fast)
             {
                 var position = -SlidesContainer.ActualX / SlideWidth ?? ActualWidth;
+                if (args.Velocity.X > 0) landOn = (int)Math.Floor(position);
+                else landOn = (int)Math.Ceiling(position);
+            }
 
-                if (args.Velocity.X > 0) await MoveToSlide((int)Math.Floor(position));
-                else await MoveToSlide((int)Math.Ceiling(position));
-            }
-            else
-            {
-                var was = CurrentSlideIndex;
-                CurrentSlideIndex = GetBestMatchIndex();
-                await SlideChanging.Raise();
-                IsAnimating = true;
-                SlidesContainer.Animate(x => SetPosition(CurrentSlideIndex)).ContinueWith(x => IsAnimating = false).RunInParallel();
-                await SlideChanged.Raise();
-            }
+            await MoveToSlide(landOn);
         }
 
         int GetBestMatchIndex()
@@ -221,13 +213,14 @@
             index = index.LimitMin(0).LimitMax(CountSlides() - 1);
             if (index == -1) return; // No slide available!!
 
-            if (CurrentSlideIndex != index)
+            var actuallyChanged = index != oldSlideIndex;
+
+            if (actuallyChanged)
             {
                 await PrepareForShiftTo(index);
                 CurrentSlideIndex = index;
+                await SlideChanging.Raise();
             }
-
-            await SlideChanging.Raise();
 
             if (animate)
             {
@@ -241,7 +234,8 @@
                 await ApplySelectedWithoutAnimation(index, oldSlideIndex);
             }
 
-            await SlideChanged.Raise();
+            if (actuallyChanged)
+                await SlideChanged.Raise();
         }
 
         protected virtual Task PrepareForShiftTo(int slideIndex) => Task.CompletedTask;
