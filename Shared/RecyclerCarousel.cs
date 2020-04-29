@@ -54,19 +54,16 @@
 
             if (!IsInitialized) return;
 
+            while (IsInitializingSlides) await Task.Delay(Animation.OneFrame);
             IsInitializingSlides = true;
-            var currentSlides = OrderedSlides.ToArray();
-            for (var i = 0; i < currentSlides.Length; i++)
+
+            await UIWorkBatch.Run(async () =>
             {
-                var slide = currentSlides[i];
-                if (dataSource.Length <= i) await MoveToRecycleBin(slide);
-                else Item(slide.X(i * SlideWidth)).Value = dataSource[i];
-            }
-
-            await CreateSufficientSlides();
-            await UpdateBullets();
-
-            await ShowFirst(animate: false);
+                foreach (var slide in OrderedSlides.ToArray()) await MoveToRecycleBin(slide);
+                await CreateSufficientSlides();
+                await UpdateBullets();
+                await ShowFirst(animate: false);
+            });
         }
 
         async Task UpdateBullets()
@@ -119,7 +116,9 @@
         {
             await slide.IgnoredAsync();
             await slide.MoveTo(Root);
-            SlideRecycleBin(Item(slide).GetType()).Add(slide);
+
+            var itemType = Item(slide).GetType().GenericTypeArguments[0];
+            SlideRecycleBin(itemType).Add(slide);
         }
 
         public override async Task OnPreRender()
@@ -181,7 +180,7 @@
             if (slide == null) return null;
             try
             {
-                return slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().Single();
+                return slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().SingleOrDefault();
             }
             catch
             {

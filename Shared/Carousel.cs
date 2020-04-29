@@ -87,12 +87,11 @@
 
             await CreateBulletContainer();
             await ApplySelectedBullet();
-
             await WhenShown(OnShown);
 
             RaiseGesturesOnUIThread();
-            Panning.Handle(OnPanning);
-            PanFinished.Handle(OnPanFinished);
+            Panning.FullEvent += OnPanning;
+            PanFinished.FullEvent += OnPanFinished;
         }
 
         async Task OnShown()
@@ -101,23 +100,20 @@
             await PrepareForShiftTo(1);
         }
 
-        Task OnPanning(PannedEventArgs args)
+        void OnPanning(PannedEventArgs args)
         {
-            if (IsAnimating) return Task.CompletedTask;
+            if (IsAnimating) return;
 
-            if (!Slides.Zoomed)
-            {
-                var difference = args.From.X - args.To.X;
-                SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
-                return PrepareForShiftTo(GetBestMatchIndex());
-            }
+            if (Slides.Zoomed) return;
 
-            return Task.CompletedTask;
+            var difference = args.From.X - args.To.X;
+            SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
+            PrepareForShiftTo(GetBestMatchIndex()).RunInParallel();
         }
 
         public int ConcurrentlyVisibleSlides => (int)Math.Ceiling(ActualWidth / InternalSlideWidth);
 
-        async Task OnPanFinished(PannedEventArgs args)
+        void OnPanFinished(PannedEventArgs args)
         {
             if (Slides.Zoomed) return;
             var landOn = GetBestMatchIndex();
@@ -130,7 +126,7 @@
                 else landOn = (int)Math.Ceiling(position);
             }
 
-            await MoveToSlide(landOn);
+            MoveToSlide(landOn).RunInParallel();
         }
 
         int GetBestMatchIndex()
