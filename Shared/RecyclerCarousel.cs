@@ -21,7 +21,7 @@
         Dictionary<Type, List<View>> SlideRecycleBins = new Dictionary<Type, List<View>>();
         List<View> BulletRecycleBin = new List<View>();
 
-        public RecyclerCarousel() => SlideWidthChanged.Handle(OnSlideWidthChanged);
+        public RecyclerCarousel() => SlideWidthChanged.Event += OnSlideWidthChanged;
 
         List<View> SlideRecycleBin(Type sourceType) => SlideRecycleBins.GetOrAdd(sourceType, () => new List<View>());
 
@@ -195,19 +195,19 @@
 
         IOrderedEnumerable<View> OrderedSlides => SlidesContainer.AllChildren.OrderBy(x => x.X.CurrentValue);
 
-        async Task OnSlideWidthChanged()
+        void OnSlideWidthChanged()
         {
             if (!IsInitialized) return;
 
             var index = 0;
             foreach (var item in OrderedSlides.ToArray())
             {
-                await OnUI(() => item.X(index * SlideWidth).Width(SlideWidth));
+                OnUI(() => item.X(index * SlideWidth).Width(SlideWidth));
                 index++;
             }
         }
 
-        Task OnUI(Action action) => UIWorkBatch.Run(action);
+        void OnUI(Action action) => UIWorkBatch.RunSync(action);
 
         protected override async Task PrepareForShiftTo(int slideIndex)
         {

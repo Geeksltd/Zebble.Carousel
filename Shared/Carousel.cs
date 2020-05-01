@@ -103,7 +103,6 @@
         void OnPanning(PannedEventArgs args)
         {
             if (IsAnimating) return;
-
             if (Slides.Zoomed) return;
 
             var difference = args.From.X - args.To.X;
