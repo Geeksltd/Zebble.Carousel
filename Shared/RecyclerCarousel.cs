@@ -23,7 +23,7 @@
 
         public RecyclerCarousel() => SlideWidthChanged.Event += OnSlideWidthChanged;
 
-        List<View> SlideRecycleBin(Type sourceType) => SlideRecycleBins.GetOrAdd(sourceType, () => new List<View>());
+        List<View> SlideRecycleBin(Type templateType) => SlideRecycleBins.GetOrAdd(templateType, () => new List<View>());
 
         /// <summary>
         /// The returned type must implement IRecyclerCarouselSlide<TSource> and have a public constructor.
@@ -59,7 +59,9 @@
 
             await UIWorkBatch.Run(async () =>
             {
-                foreach (var slide in OrderedSlides.ToArray()) await MoveToRecycleBin(slide);
+                var toRecycle = OrderedSlides.ToArray();
+                foreach (var slide in toRecycle) await MoveToRecycleBin(slide);
+
                 await CreateSufficientSlides();
                 await UpdateBullets();
                 await ShowFirst(animate: false);
@@ -89,7 +91,7 @@
         async Task CreateSufficientSlides()
         {
             IsInitializingSlides = true;
-
+            
             while (true)
             {
                 var created = SlidesContainer.AllChildren.Count;
@@ -117,8 +119,9 @@
             await slide.IgnoredAsync();
             await slide.MoveTo(Root);
 
-            var itemType = Item(slide).GetType().GenericTypeArguments[0];
-            SlideRecycleBin(itemType).Add(slide);
+            var template = GetTemplate(slide)?.GetType();
+            if (template != null)
+                SlideRecycleBin(template).Add(slide);
         }
 
         public override async Task OnPreRender()
@@ -131,7 +134,9 @@
 
         async Task<View> CreateSlide(TSource item)
         {
-            var bin = SlideRecycleBin(item.GetType());
+            var templateType = GetTemplateType(item.GetType());
+
+            var bin = SlideRecycleBin(templateType);
 
             var result = bin.FirstOrDefault();
 
@@ -141,13 +146,14 @@
                  {
                      bin.Remove(result);
                      Item(result).Set(item);
-                     result.X(dataSource.IndexOf(item) * SlideWidth);
-                     await result.IgnoredAsync(false);
+                     var newX = dataSource.IndexOf(item) * SlideWidth;
+                     result.X(newX);
                      await result.MoveTo(SlidesContainer);
+                     await result.IgnoredAsync(false);
                  }
                  else
                  {
-                     var slide = (IRecyclerCarouselSlide<TSource>)GetTemplateType(item.GetType()).CreateInstance();
+                     var slide = (IRecyclerCarouselSlide<TSource>)templateType.CreateInstance();
                      slide.Item.Set(item);
                      result = await AddSlide((View)slide);
                      result.X(result.ActualX);
@@ -178,17 +184,27 @@
         IRecyclerCarouselSlide<TSource> GetTemplate(View slide)
         {
             if (slide == null) return null;
+
+            IRecyclerCarouselSlide<TSource> result;
+
             try
             {
-                return slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().SingleOrDefault();
+                result = slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().SingleOrDefault();
             }
             catch
             {
                 foreach (var child in slide.AllChildren)
                     if (!(child is IRecyclerCarouselSlide<TSource>))
                         Zebble.Device.Log.Error(child.GetType().FullName + " is not " + typeof(IRecyclerCarouselSlide<TSource>).GetProgrammingName());
-                return null;
+                result = null;
             }
+
+            if (result == null)
+            {
+                // How?
+            }
+
+            return result;
         }
 
         Bindable<TSource> Item(View slide) => GetTemplate(slide)?.Item;

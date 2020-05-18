@@ -77,6 +77,6 @@
   </Target>
   <Import Project="..\packages\Xamarin.Build.Download.0.4.11\build\Xamarin.Build.Download.targets" Condition="Exists('..\packages\Xamarin.Build.Download.0.4.11\build\Xamarin.Build.Download.targets')" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y $(OutDir)Zebble.Carousel.Android.* E:\Projects\WordUp2019\Wordatown.App\packages\Zebble.Carousel.4.6.341\lib\MonoAndroid10</PostBuildEvent>
+    <PostBuildEvent>copy /y $(OutDir)Zebble.Carousel.Android.* E:\Projects\WordUp2019\Wordatown.App\packages\Zebble.Carousel.4.6.342\lib\MonoAndroid10</PostBuildEvent>
   </PropertyGroup>
 </Project>
