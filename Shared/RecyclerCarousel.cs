@@ -91,7 +91,7 @@
         async Task CreateSufficientSlides()
         {
             IsInitializingSlides = true;
-            
+
             while (true)
             {
                 var created = SlidesContainer.AllChildren.Count;
@@ -135,6 +135,7 @@
         async Task<View> CreateSlide(TSource item)
         {
             var templateType = GetTemplateType(item.GetType());
+            if (templateType == null) return null;
 
             var bin = SlideRecycleBin(templateType);
 
@@ -254,9 +255,9 @@
             var dataItem = DataSource.ElementAtOrDefault(slideIndex);
             if (dataItem == null) return null;
             var neededTemplate = GetTemplateType(dataItem.GetType());
+            if (neededTemplate == null) return null;
 
             var slideX = slideIndex * SlideWidth;
-
             var slidesAtPosition = SlidesContainer.AllChildren.Where(v => v.X.CurrentValue == slideX).ToArray();
 
             View slide = null;
@@ -264,6 +265,7 @@
             foreach (var s in slidesAtPosition)
             {
                 var template = GetTemplate(s);
+                if (template == null) continue;
                 if (template.GetType() == neededTemplate)
                 {
                     if (slide is null) slide = s;
@@ -285,7 +287,7 @@
             }
             else
             {
-                return (await CreateSlide(dataItem)).X(slideX);
+                return (await CreateSlide(dataItem))?.X(slideX);
             }
         }
 
