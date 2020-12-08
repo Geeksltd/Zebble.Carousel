@@ -16,6 +16,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)RecyclerCarousel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RecyclerCarouselSlide.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SlidesContainer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Testing\CarouselUITest.cs" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\CreatePackage.bat" />
     <None Include="$(MSBuildThisFileDirectory)NuGet\NuGet.nuspec" />
   </ItemGroup>
