@@ -115,15 +115,9 @@
     <GenerateLibraryLayout>true</GenerateLibraryLayout>
     <DocumentationFile>..\lib\bin\x64\Release\Zebble.Carousel.UWP.XML</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.1.4</Version>
-    </PackageReference>
-    <PackageReference Include="Newtonsoft.Json">
-      <Version>9.0.1</Version>
-    </PackageReference>
+  <ItemGroup>   
     <PackageReference Include="Zebble">
-      <Version>4.5.398</Version>
+      <Version>4.5.407</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="..\Shared\Shared.projitems" Label="Shared" Condition="Exists('..\Shared\Shared.projitems')" />
