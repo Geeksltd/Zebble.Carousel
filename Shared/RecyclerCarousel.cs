@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Olive;
 
     public class RecyclerCarousel<TSource, TSlideTemplate> : RecyclerCarousel<TSource>
          where TSlideTemplate : View, IRecyclerCarouselSlide<TSource>, new()

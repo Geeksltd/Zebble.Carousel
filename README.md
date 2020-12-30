@@ -1,4 +1,4 @@
-[logo]: https://raw.githubusercontent.com/Geeksltd/Zebble.Carousel/master/Shared/NuGet/Icon.png "Zebble.Carousel"
+﻿[logo]: https://raw.githubusercontent.com/Geeksltd/Zebble.Carousel/master/icon.png "Zebble.Carousel"
 
 
 ## Zebble.Carousel

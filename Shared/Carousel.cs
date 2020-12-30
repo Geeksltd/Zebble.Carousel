@@ -3,6 +3,7 @@
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Olive;
 
     public partial class Carousel : Stack
     {
