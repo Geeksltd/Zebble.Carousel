@@ -7,7 +7,7 @@
     <RootNamespace>Zebble</RootNamespace>
     <PackageId>Zebble.Carousel</PackageId>
     <Product>$(AssemblyName) ($(TargetFramework))</Product>
-    <Version>4.6.351.0</Version>
+    <Version>4.6.352.0</Version>
     <PackOnBuild>true</PackOnBuild>
     <NeutralLanguage>en</NeutralLanguage>
     <LangVersion>default</LangVersion>
@@ -41,6 +41,7 @@
     <DefineConstants>UWP</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" $(TargetFramework.StartsWith('MonoAndroid')) ">
+    <AndroidResgenNamespace>Zebble.Carousel.Res</AndroidResgenNamespace>
     <DefineConstants>ANDROID</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" $(TargetFramework.StartsWith('Xamarin.iOS')) ">
@@ -65,7 +66,7 @@
     <None Remove="Zebble-LicenseAgreement.txt" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Zebble" Version="4.5.434" />
+    <PackageReference Include="Zebble" Version="4.5.435" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Android\" />
