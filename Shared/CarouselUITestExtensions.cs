@@ -5,7 +5,7 @@ using Zebble;
 
 namespace Zebble.Plugin
 {
-    public static class CarouselUITestExtention
+    public static class CarouselUITestExtensions
     {
         public static void SwipeCarousel(this IBaseUITest @this, Direction direction = Direction.Left, View thisCarousel = null)
         {
