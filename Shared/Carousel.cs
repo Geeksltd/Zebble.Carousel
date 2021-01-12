@@ -185,7 +185,7 @@
         {
             if (child.Parent == null)
             {
-                Device.Log.Error("[Carousel Slide] the current child is not exist in the specefic carousel");
+                Log.For(this).Error(null, "[Carousel Slide] the current child is not exist in the specefic carousel");
                 return;
             }
 
