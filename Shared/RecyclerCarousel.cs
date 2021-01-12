@@ -38,7 +38,7 @@
             {
                 if (IsInitialized)
                 {
-                    Log.For(this).Error(null, "RecyclerCarousel.DataSource should not be set once it's initialized. Call UpdateDataSource() instead.");
+                    Log.For(this).Error("RecyclerCarousel.DataSource should not be set once it's initialized. Call UpdateDataSource() instead.");
                     UpdateDataSource(value).RunInParallel();
                 }
                 else dataSource = value.ToArray();
@@ -197,7 +197,7 @@
             {
                 foreach (var child in slide.AllChildren)
                     if (!(child is IRecyclerCarouselSlide<TSource>))
-                        Log.For(this).Error(null, child.GetType().FullName + " is not " + typeof(IRecyclerCarouselSlide<TSource>).GetProgrammingName());
+                        Log.For(this).Error(child.GetType().FullName + " is not " + typeof(IRecyclerCarouselSlide<TSource>).GetProgrammingName());
                 result = null;
             }
 
@@ -270,7 +270,7 @@
                 if (template.GetType() == neededTemplate)
                 {
                     if (slide is null) slide = s;
-                    else Log.For(this).Error(null, "Multiple slides at position " + slideX);
+                    else Log.For(this).Error("Multiple slides at position " + slideX);
                 }
                 else
                 {
