@@ -15,9 +15,8 @@
 
     public abstract class RecyclerCarousel<TSource> : Carousel where TSource : class
     {
-        bool IsInitializingSlides = true;
+        bool IsInitialized, IsInitializingSlides = true;
         TSource[] dataSource = new TSource[0];
-        bool IsInitialized;
         string LatestRenderedRange;
         Dictionary<Type, List<View>> SlideRecycleBins = new Dictionary<Type, List<View>>();
         List<View> BulletRecycleBin = new List<View>();
@@ -38,7 +37,9 @@
             {
                 if (IsInitialized)
                 {
-                    Log.For(this).Error("RecyclerCarousel.DataSource should not be set once it's initialized. Call UpdateDataSource() instead.");
+                    Log.For(this)
+                        .Error("RecyclerCarousel.DataSource should not be set once it's initialized. Call UpdateDataSource() instead.");
+
                     UpdateDataSource(value).RunInParallel();
                 }
                 else dataSource = value.ToArray();
@@ -98,6 +99,7 @@
                 var created = SlidesContainer.AllChildren.Count;
 
                 var slideX = InternalSlideWidth * created;
+
                 if (slideX > ActualWidth + InternalSlideWidth)
                 {
                     IsInitializingSlides = false;
@@ -105,6 +107,7 @@
                 }
 
                 var nextItem = dataSource.ElementAtOrDefault(created);
+
                 if (nextItem == null)
                 {
                     IsInitializingSlides = false;
@@ -121,6 +124,7 @@
             await slide.MoveTo(Root);
 
             var template = GetTemplate(slide)?.GetType();
+
             if (template != null)
                 SlideRecycleBin(template).Add(slide);
         }
@@ -198,6 +202,7 @@
                 foreach (var child in slide.AllChildren)
                     if (!(child is IRecyclerCarouselSlide<TSource>))
                         Log.For(this).Error(child.GetType().FullName + " is not " + typeof(IRecyclerCarouselSlide<TSource>).GetProgrammingName());
+
                 result = null;
             }
 
@@ -218,6 +223,7 @@
             if (!IsInitialized) return;
 
             var index = 0;
+
             foreach (var item in OrderedSlides.ToArray())
             {
                 OnUI(() => item.X(index * SlideWidth).Width(SlideWidth));
@@ -267,6 +273,7 @@
             {
                 var template = GetTemplate(s);
                 if (template == null) continue;
+
                 if (template.GetType() == neededTemplate)
                 {
                     if (slide is null) slide = s;
@@ -281,6 +288,7 @@
             if (slide != null) return slide;
 
             slide = GetRecyclableSlide(neededTemplate, favourLeft: slideIndex > CurrentSlideIndex);
+
             if (slide != null)
             {
                 Item(slide.X(slideX)).Set(dataItem);

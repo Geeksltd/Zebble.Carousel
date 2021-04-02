@@ -10,10 +10,7 @@ namespace Zebble
     public class SlidesContainer : Canvas
     {
         internal float SlideWidth;
-        public SlidesContainer()
-        {
-            this.Id("SlidesContainer").Height(100.Percent());
-        }
+        public SlidesContainer() => this.Id("SlidesContainer").Height(100.Percent());
 
         internal void ArrangeSlides(float slideWidth)
         {

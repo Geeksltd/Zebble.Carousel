@@ -119,9 +119,11 @@
             var landOn = GetBestMatchIndex();
 
             var fast = Math.Abs(args.Velocity.X) >= StickVelocity;
+
             if (fast)
             {
                 var position = -SlidesContainer.ActualX / SlideWidth ?? ActualWidth;
+
                 if (args.Velocity.X > 0) landOn = (int)Math.Floor(position);
                 else landOn = (int)Math.Ceiling(position);
             }
@@ -151,6 +153,7 @@
         public async Task<View> AddSlide(View child)
         {
             View slide;
+
             if (EnableZooming) slide = new ZoomableSlide() { EnableZooming = true };
             else slide = new Slide();
 
@@ -173,10 +176,10 @@
             slide.Visible = child.Visible;
 
             child.IgnoredChanged.Handle(async x =>
-            {
-                await slide.IgnoredAsync(x.Value);
-                AdjustContainerWidth();
-            });
+{
+    await slide.IgnoredAsync(x.Value);
+    AdjustContainerWidth();
+});
 
             child.VisibilityChanged.Handle(() => slide.Visible = child.Visible);
         }
@@ -222,6 +225,7 @@
             {
                 if (ShowBullets)
                     BulletsContainer.Animate(c => SetHighlightedBullet(oldSlideIndex, index)).RunInParallel();
+
                 IsAnimating = true;
                 SlidesContainer.Animate(c => SetPosition(index)).ContinueWith(x => IsAnimating = false).RunInParallel();
             }
@@ -230,8 +234,7 @@
                 await ApplySelectedWithoutAnimation(index, oldSlideIndex);
             }
 
-            if (actuallyChanged)
-                await SlideChanged.Raise();
+            if (actuallyChanged) await SlideChanged.Raise();
         }
 
         protected virtual Task PrepareForShiftTo(int slideIndex) => Task.CompletedTask;

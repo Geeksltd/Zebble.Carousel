@@ -18,6 +18,7 @@ namespace Zebble.Plugin
             @this.Delay(delay);
 
             Carousel carousel;
+
             if (thisCarousel == null) carousel = @this.Find<Carousel>();
             else carousel = thisCarousel as Carousel;
 

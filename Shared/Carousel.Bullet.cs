@@ -18,8 +18,10 @@
             foreach (var c in BulletsContainer.AllChildren<Bullet>())
                 await c.SetPseudoCssState("active", set: false);
 
-            await (BulletsContainer.AllChildren<Bullet>().Skip(CurrentSlideIndex)
-                  .FirstOrDefault()?.SetPseudoCssState("active", set: true)).OrCompleted();
+            var first = BulletsContainer.AllChildren<Bullet>().Skip(CurrentSlideIndex)
+                  .FirstOrDefault();
+            if (first != null)
+                await first.SetPseudoCssState("active");
         }
 
         protected virtual async Task AddBullet()
@@ -49,12 +51,14 @@
         {
             if (!ShowBullets) return;
 
-            BulletsContainer.Y.BindTo(Height, BulletsContainer.Height, BulletsContainer.Margin.Bottom, (x, y, mb) => x - y - mb);
+            BulletsContainer.Y
+                .BindTo(Height, BulletsContainer.Height, BulletsContainer.Margin.Bottom, (x, y, mb) => x - y - mb);
         }
 
         protected virtual async Task RemoveLastBullet()
         {
             var bullet = BulletsContainer.CurrentChildren.LastOrDefault();
+
             if (bullet != null)
                 await BulletsContainer.Remove(bullet);
 

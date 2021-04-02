@@ -10,7 +10,7 @@
         public class CarouselSlides
         {
             Carousel Carousel;
-            internal CarouselSlides(Carousel carousel) { Carousel = carousel; }
+            internal CarouselSlides(Carousel carousel) => Carousel = carousel;
             public Task<View> Add(View slide) => Carousel.AddSlide(slide);
 
             public bool Zoomed
