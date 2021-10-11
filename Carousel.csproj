@@ -60,5 +60,8 @@
 	<ItemGroup>
 		<PackageReference Include="Zebble" Version="4.5.504" />
 	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Exec Command="update-local-nuget-cache $(TargetDir)" />
+	</Target>
 	
 </Project>
