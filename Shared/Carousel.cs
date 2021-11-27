@@ -17,10 +17,11 @@
         float? slideWidth;
         public int CurrentSlideIndex { get; private set; }
         public readonly CarouselSlides Slides;
-        public readonly SlidesContainer SlidesContainer = new SlidesContainer();
-        public readonly AsyncEvent SlideChanged = new AsyncEvent();
-        public readonly AsyncEvent SlideChanging = new AsyncEvent();
-        public readonly AsyncEvent SlideWidthChanged = new AsyncEvent();
+        public readonly SlidesContainer SlidesContainer = new();
+        public readonly AsyncEvent SlideChanged = new();
+        public readonly AsyncEvent SlideChanging = new();
+        public readonly AsyncEvent SlideWidthChanged = new();
+        public readonly AsyncEvent SlidesEnded = new();
 
         public bool ShowBullets { get; set; } = true;
 
@@ -209,8 +210,12 @@
         {
             var oldSlideIndex = CurrentSlideIndex;
 
-            index = index.LimitMin(0).LimitMax(CountSlides() - 1);
-            if (index == -1) return; // No slide available!!
+            index = index.LimitMin(0);
+            if (index >= CountSlides())
+            {
+                await SlidesEnded.Raise();
+                return; // No slide available!!
+            }
 
             var actuallyChanged = index != oldSlideIndex;
 
