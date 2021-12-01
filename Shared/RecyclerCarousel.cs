@@ -94,27 +94,24 @@
         {
             IsInitializingSlides = true;
 
-            while (true)
+            try
             {
-                var created = SlidesContainer.AllChildren.Count;
-
-                var slideX = InternalSlideWidth * created;
-
-                if (slideX > ActualWidth + InternalSlideWidth)
+                while (true)
                 {
-                    IsInitializingSlides = false;
-                    return;
+                    var created = SlidesContainer.AllChildren.Count;
+
+                    var slideX = InternalSlideWidth * created;
+                    if (slideX > ActualWidth + InternalSlideWidth) return;
+
+                    var nextItem = dataSource.ElementAtOrDefault(created);
+                    if (nextItem == null) return;
+
+                    await CreateSlide(nextItem);
                 }
-
-                var nextItem = dataSource.ElementAtOrDefault(created);
-
-                if (nextItem == null)
-                {
-                    IsInitializingSlides = false;
-                    return;
-                }
-
-                await CreateSlide(nextItem);
+            }
+            finally
+            {
+                IsInitializingSlides = false;
             }
         }
 
@@ -252,7 +249,10 @@
             LatestRenderedRange = $"{min}-{max}";
 
             for (var i = min; i <= max; i++)
-                await RenderSlideAt(i);
+            {
+                var slide = await RenderSlideAt(i);
+                await slide.IgnoredAsync(false);
+            }
         }
 
         async Task<View> RenderSlideAt(int slideIndex)
