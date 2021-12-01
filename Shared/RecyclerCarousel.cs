@@ -249,10 +249,7 @@
             LatestRenderedRange = $"{min}-{max}";
 
             for (var i = min; i <= max; i++)
-            {
-                var slide = await RenderSlideAt(i);
-                await slide.IgnoredAsync(false);
-            }
+                await RenderSlideAt(i);
         }
 
         async Task<View> RenderSlideAt(int slideIndex)
