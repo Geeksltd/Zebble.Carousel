@@ -13,16 +13,15 @@
     {
         const int DEFAULT_HEIGHT = 300;
 
-        bool IsAnimating, enableZooming;
+        bool IsAnimating;
         List<TSource> dataSource = new();
         List<float> slidesActualWidth = new();
 
-        public float XPositionOffset => CenterAligned ? (ActualWidth - InternalSlideWidth) / 2 : 0;
-        protected float InternalSlideWidth
+        protected float CurrentSlideWidth
         {
             get
             {
-                var i = GetMiddleSlideIndex();
+                var i = GetBestMatchIndex();
                 if (slidesActualWidth.Count > i)
                     return slidesActualWidth[i];
                 return ActualWidth;
@@ -30,32 +29,7 @@
         }
 
         public BindableSlidesContainer<TSource, TSlideTemplate> SlidesContainer { get; set; }
-        public StickinessOption Stickiness { get; set; } = StickinessOption.Normal;
         public int CurrentSlideIndex { get; private set; }
-        public bool CenterAligned { get; set; } = true;
-        public bool EnableZooming
-        {
-            get { return enableZooming; }
-            set
-            {
-                if (value == enableZooming) return;
-                enableZooming = value;
-            }
-        }
-        float StickVelocity
-        {
-            get
-            {
-                var multiplier = 1f;
-                if (Stickiness == StickinessOption.High) multiplier = 2;
-                if (Stickiness == StickinessOption.Low) multiplier = 0.5f;
-#if IOS
-                return multiplier * 30;
-#else
-                return multiplier * 0.20f;
-#endif
-            }
-        }
 
         public readonly AsyncEvent SlideChanged = new();
         public readonly AsyncEvent SlideChanging = new();
@@ -97,35 +71,32 @@
             if (SlidesContainer.Zoomed) return;
             var landOn = GetBestMatchIndex();
 
-            var fast = Math.Abs(args.Velocity.X) >= StickVelocity;
-
-            if (fast)
-            {
-                var position = -SlidesContainer.ActualX / ActualWidth;
-
-                if (args.Velocity.X > 0) landOn = (int)Math.Floor(position);
-                else landOn = (int)Math.Ceiling(position);
-            }
-
             MoveToSlide(landOn).RunInParallel();
         }
-        int GetBestMatchIndex()
+
+        float GetWidthToSlide(int slideIndex) => slidesActualWidth.Take(slideIndex).Sum() - ActualWidth / 2;
+        int GetIndexToSlideWidth(float width)
         {
-            var result = -(int)Math.Round((SlidesContainer.ActualX - XPositionOffset) / ActualWidth);
-            return result.LimitMin(0).LimitMax(CountSlides() - 1);
+            float widthCount = 0;
+            int index = 0;
+            for (; index < slidesActualWidth.Count; index++)
+            {
+                widthCount += slidesActualWidth[index];
+                if (widthCount >= width) break;
+            }
+
+            // 'width' is way bigger than our slides container
+            return index + 1;
         }
 
-        int GetMiddleSlideIndex()
+        int GetBestMatchIndex()
         {
+            if (SlidesContainer.ActualX > 0) return 0;
+
             var slidedWidth = Math.Abs(SlidesContainer.ActualX) + (ActualWidth / 2);
-            float count = 0;
-            for (int i = 0; i < slidesActualWidth.Count; i++)
-            {
-                var width = slidesActualWidth[i];
-                count += width;
-                if (count >= slidedWidth) return i;
-            }
-            return CountSlides() - 1;
+            var index = GetIndexToSlideWidth(slidedWidth);
+
+            return index.LimitMin(0).LimitMax(CountSlides());
         }
 
         public virtual int CountSlides() => SlidesContainer.CurrentChildren.Count();
@@ -160,6 +131,7 @@
             var slides = SlidesContainer.CurrentChildren<TSlideTemplate>();
             var lastChild = slides.LastOrDefault();
 
+            slidesActualWidth.Clear();
             slides.Do(slide => slidesActualWidth.Add(slide.ActualWidth));
 
             SlidesContainer.Width(lastChild.ActualX + lastChild.ActualWidth);
@@ -176,16 +148,17 @@
         public async Task MoveToSlide(int index, bool animate = true)
         {
             var oldSlideIndex = CurrentSlideIndex;
-
             index = index.LimitMin(0);
+
             if (index >= CountSlides())
             {
                 await SlidesEnded.Raise();
+                await ShowLast();
                 return; // No slide available!!
             }
 
             var actuallyChanged = index != oldSlideIndex;
-
+            
             if (actuallyChanged)
             {
                 await PrepareForShiftTo(index);
@@ -210,7 +183,12 @@
         {
             currentIndex = currentIndex.LimitMax(CountSlides()).LimitMin(0);
 
-            var x = XPositionOffset - currentIndex * ActualWidth;
+            var x = (- GetWidthToSlide(currentIndex)).LimitMax(0);
+
+            if (SlidesContainer.ActualWidth > ActualWidth)
+                x = x.LimitMin(-(SlidesContainer.ActualWidth - (ActualWidth / 2)));
+            else
+                x = 0;
 
             SlidesContainer.X(x);
         }
