@@ -214,6 +214,7 @@
             if (index >= CountSlides())
             {
                 await SlidesEnded.Raise();
+                await ShowLast(true);
                 return; // No slide available!!
             }
 
