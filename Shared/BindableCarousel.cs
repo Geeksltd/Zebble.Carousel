@@ -199,14 +199,12 @@
             set => UpdateDataSource(value).RunInParallel();
         }
 
-        public async Task UpdateDataSource(IEnumerable<TSource> data)
-        {
-            dataSource = data.OrEmpty().ToList();
-
-            await UIWorkBatch.Run(async () =>
+        public Task UpdateDataSource(IEnumerable<TSource> data)
+            => UIWorkBatch.Run(async () =>
             {
+                dataSource.Clear();
                 await SlidesContainer.ClearChildren();
-                foreach (var item in data)
+                foreach (var item in data.OrEmpty().ToArray())
                 {
                     var slide = new TSlideTemplate();
                     slide.Item.Set(item);
@@ -215,7 +213,6 @@
 
                 await ShowFirst(animate: false);
             });
-        }
 
         public override void Dispose()
         {
