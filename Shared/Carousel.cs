@@ -107,8 +107,11 @@
             if (IsAnimating) return;
             if (Slides.Zoomed) return;
 
-            var difference = args.From.X - args.To.X;
-            SlidesContainer.X(SlidesContainer.X.CurrentValue - difference);
+            var horizontalDifference = args.From.X - args.To.X;
+            var verticalDifference = args.From.Y - args.To.Y;
+            if (Math.Abs(verticalDifference)> Math.Abs(horizontalDifference))
+                return;
+            SlidesContainer.X(SlidesContainer.X.CurrentValue - horizontalDifference);
             PrepareForShiftTo(GetBestMatchIndex()).RunInParallel();
         }
 
