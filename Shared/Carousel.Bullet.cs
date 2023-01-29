@@ -30,7 +30,7 @@
 
             await BulletsContainer.Add(new Bullet());
 
-            if (!BulletsContainer.Visible && BulletsContainer.CurrentChildren.Count() > 1)
+            if (!BulletsContainer.Visible && BulletsContainer.CurrentChildren.Count() >= 1)
                 BulletsContainer.Visible(value: true);
         }
 
