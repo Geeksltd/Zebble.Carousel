@@ -15,7 +15,14 @@
 
         bool IsAnimating, enableZooming;
         float? slideWidth;
-        public int CurrentSlideIndex { get; private set; }
+
+        int currentSlideIndex;
+        public int CurrentSlideIndex
+        {
+            get => currentSlideIndex;
+            set => MoveToSlide(value).GetAwaiter();
+        }
+
         public readonly CarouselSlides Slides;
         public readonly SlidesContainer SlidesContainer = new();
         public readonly AsyncEvent SlideChanged = new();
@@ -109,7 +116,7 @@
 
             var horizontalDifference = args.From.X - args.To.X;
             var verticalDifference = args.From.Y - args.To.Y;
-            if (Math.Abs(verticalDifference)> Math.Abs(horizontalDifference))
+            if (Math.Abs(verticalDifference) > Math.Abs(horizontalDifference))
                 return;
             SlidesContainer.X(SlidesContainer.X.CurrentValue - horizontalDifference);
             PrepareForShiftTo(GetBestMatchIndex()).RunInParallel();
@@ -201,9 +208,9 @@
             AdjustContainerWidth();
         }
 
-        public Task Next(bool animate = true) => MoveToSlide(CurrentSlideIndex + 1, animate);
+        public Task Next(bool animate = true) => MoveToSlide(currentSlideIndex + 1, animate);
 
-        public Task Previous(bool animate = true) => MoveToSlide(CurrentSlideIndex - 1, animate);
+        public Task Previous(bool animate = true) => MoveToSlide(currentSlideIndex - 1, animate);
 
         public Task ShowFirst(bool animate = true) => MoveToSlide(0, animate);
 
@@ -211,7 +218,7 @@
 
         public async Task MoveToSlide(int index, bool animate = true)
         {
-            var oldSlideIndex = CurrentSlideIndex;
+            var oldSlideIndex = currentSlideIndex;
 
             index = index.LimitMin(0);
             if (index >= CountSlides())
@@ -226,7 +233,7 @@
             if (actuallyChanged)
             {
                 await PrepareForShiftTo(index);
-                CurrentSlideIndex = index;
+                currentSlideIndex = index;
                 await SlideChanging.Raise();
             }
 
