@@ -20,7 +20,11 @@
         public int CurrentSlideIndex
         {
             get => currentSlideIndex;
-            set => MoveToSlide(value).GetAwaiter();
+            set
+            {
+                if (IsRendered()) MoveToSlide(value).GetAwaiter();
+                else WhenShown(() => CurrentSlideIndex = value);
+            }
         }
 
         public readonly CarouselSlides Slides;
