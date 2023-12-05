@@ -52,8 +52,6 @@
         {
             dataSource = data.OrEmpty().ToArray();
 
-            AdjustContainerWidth();
-
             if (!IsInitialized) return;
 
             while (IsInitializingSlides) await Task.Delay(Animation.OneFrame);
@@ -61,8 +59,14 @@
 
             await UIWorkBatch.Run(async () =>
             {
+                // Due to a BUG in MoveTo, recycling mechanism fails when changing the data source for the second time
+                // and as we are in hurry to stablize the app, I'm applying this as a temporary fix.
+                await SlidesContainer.ClearChildren();
+
                 var toRecycle = OrderedSlides.ToArray();
                 foreach (var slide in toRecycle) await MoveToRecycleBin(slide);
+
+                AdjustContainerWidth();
 
                 await CreateSufficientSlides();
                 await UpdateBullets();
