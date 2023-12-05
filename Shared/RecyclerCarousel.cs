@@ -70,7 +70,7 @@
 
                 await CreateSufficientSlides();
                 await UpdateBullets();
-                await ShowFirst(animate: false);
+                if (ShouldResetCurrentSlide) await ShowFirst(animate: false);
             });
         }
 

@@ -15,6 +15,7 @@
 
         bool IsAnimating, enableZooming;
         float? slideWidth;
+        protected bool ShouldResetCurrentSlide = true;
 
         int currentSlideIndex;
         public int CurrentSlideIndex
@@ -22,6 +23,7 @@
             get => currentSlideIndex;
             set
             {
+                ShouldResetCurrentSlide = false;
                 if (IsRendered()) MoveToSlide(value).GetAwaiter();
                 else WhenShown(() => CurrentSlideIndex = value);
             }
