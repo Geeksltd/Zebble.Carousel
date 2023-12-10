@@ -24,7 +24,7 @@
             set
             {
                 ShouldResetCurrentSlide = false;
-                if (IsRendered()) MoveToSlide(value).GetAwaiter();
+                if (IsShown) MoveToSlide(value).GetAwaiter();
                 else WhenShown(() => CurrentSlideIndex = value);
             }
         }
@@ -193,10 +193,10 @@
             slide.Visible = child.Visible;
 
             child.IgnoredChanged.Handle(async x =>
-{
-    await slide.IgnoredAsync(x.Value);
-    AdjustContainerWidth();
-});
+            {
+                await slide.IgnoredAsync(x.Value);
+                AdjustContainerWidth();
+            });
 
             child.VisibilityChanged.Handle(() => slide.Visible = child.Visible);
         }
