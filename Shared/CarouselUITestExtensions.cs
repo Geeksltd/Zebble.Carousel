@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Zebble;
-
-namespace Zebble.Plugin
+﻿namespace Zebble.Plugin
 {
     public static class CarouselUITestExtensions
     {

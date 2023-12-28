@@ -13,7 +13,7 @@
 
         public StickinessOption Stickiness { get; set; } = StickinessOption.Normal;
 
-        bool IsAnimating, enableZooming;
+        bool IsAnimating;
         float? slideWidth;
         protected bool ShouldResetCurrentSlide = true;
 
@@ -39,16 +39,6 @@
         public bool ShowBullets { get; set; } = true;
 
         public bool CenterAligned { get; set; } = true;
-
-        public bool EnableZooming
-        {
-            get { return enableZooming; }
-            set
-            {
-                if (value == enableZooming) return;
-                enableZooming = value;
-            }
-        }
 
         public float? SlideWidth
         {
@@ -86,11 +76,9 @@
         public override async Task<TView> Add<TView>(TView child, bool awaitNative = false)
         {
             if (child.IsAnyOf(BulletsContainer, SlidesContainer))
-                await base.Add(child, awaitNative);
-            else
-                await AddSlide(child);
+                return await base.Add(child, awaitNative);
 
-            return child;
+            return await AddSlide(child);
         }
 
         public override async Task OnInitializing()
@@ -118,7 +106,6 @@
         void OnPanning(PannedEventArgs args)
         {
             if (IsAnimating) return;
-            if (Slides.Zoomed) return;
 
             var horizontalDifference = args.From.X - args.To.X;
             var verticalDifference = args.From.Y - args.To.Y;
@@ -132,7 +119,6 @@
 
         void OnPanFinished(PannedEventArgs args)
         {
-            if (Slides.Zoomed) return;
             var landOn = GetBestMatchIndex();
 
             var fast = Math.Abs(args.Velocity.X) >= StickVelocity;
@@ -167,49 +153,28 @@
 
         protected float InternalSlideWidth => SlideWidth ?? ActualWidth;
 
-        public async Task<View> AddSlide(View child)
+        public async Task<TView> AddSlide<TView>(TView child) where TView: View
         {
-            View slide;
-
-            if (EnableZooming) slide = new ZoomableSlide() { EnableZooming = true };
-            else slide = new Slide();
-
-            await SlidesContainer.Add(slide);
-            await slide.Add(child);
+            await SlidesContainer.Add(child);
 
             if (ShouldAddBulletWithSlide()) await AddBullet();
 
-            await HandleVisibility(child, slide);
             AdjustContainerWidth();
 
-            return slide;
+            return child;
         }
 
         protected virtual bool ShouldAddBulletWithSlide() => true;
 
-        async Task HandleVisibility(View child, View slide)
-        {
-            await slide.IgnoredAsync(child.Ignored);
-            slide.Visible = child.Visible;
-
-            child.IgnoredChanged.Handle(async x =>
-            {
-                await slide.IgnoredAsync(x.Value);
-                AdjustContainerWidth();
-            });
-
-            child.VisibilityChanged.Handle(() => slide.Visible = child.Visible);
-        }
-
         public virtual async Task RemoveSlide(View child)
         {
-            if (child.Parent == null)
+            if (child == null)
             {
                 Log.For(this).Error("[Carousel Slide] the current child is not exist in the specefic carousel");
                 return;
             }
 
-            await SlidesContainer.Remove(child.Parent);
+            await SlidesContainer.Remove(child);
             await RemoveLastBullet();
             AdjustContainerWidth();
         }
@@ -277,13 +242,6 @@
         }
 
         public float XPositionOffset => CenterAligned ? (ActualWidth - InternalSlideWidth) / 2 : 0;
-
-        public class Slide : Stack
-        {
-            public override string ToString() => base.ToString() + " > " + AllChildren.LastOrDefault();
-        }
-
-        public class ZoomableSlide : ScrollView { }
 
         public override void Dispose()
         {

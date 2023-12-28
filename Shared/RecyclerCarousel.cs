@@ -48,7 +48,7 @@
             }
         }
 
-        public async Task UpdateDataSource(IEnumerable<TSource> data)
+        public virtual async Task UpdateDataSource(IEnumerable<TSource> data)
         {
             dataSource = data.OrEmpty().ToArray();
 
@@ -62,7 +62,6 @@
                 // Due to a BUG in MoveTo, recycling mechanism fails when changing the data source for the second time
                 // and as we are in hurry to stablize the app, I'm applying this as a temporary fix.
                 await SlidesContainer.ClearChildren(awaitNative: true);
-                SlidesContainer.X(0);
 
                 var toRecycle = OrderedSlides.ToArray();
                 foreach (var slide in toRecycle) await MoveToRecycleBin(slide);
@@ -197,7 +196,7 @@
 
             try
             {
-                result = slide?.AllChildren.OfType<IRecyclerCarouselSlide<TSource>>().SingleOrDefault();
+                result = slide as IRecyclerCarouselSlide<TSource>;
             }
             catch
             {
