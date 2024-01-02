@@ -24,12 +24,12 @@
             set
             {
                 ShouldResetCurrentSlide = false;
-                if (IsShown)
+                if (IsShown) MoveToSlide(value).GetAwaiter();
+                else
                 {
                     ApplySelectedWithoutAnimation(value).GetAwaiter();
-                    MoveToSlide(value).GetAwaiter();
+                    WhenShown(() => CurrentSlideIndex = value).GetAwaiter();
                 }
-                else WhenShown(() => CurrentSlideIndex = value);
             }
         }
 
@@ -242,7 +242,7 @@
             currentIndex = currentIndex.LimitMax(CountSlides() + 1 - ConcurrentlyVisibleSlides).LimitMin(0);
 
             var x = XPositionOffset - currentIndex * InternalSlideWidth;
-            
+
             SlidesContainer.X(x);
         }
 
