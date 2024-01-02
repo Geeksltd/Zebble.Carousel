@@ -24,7 +24,11 @@
             set
             {
                 ShouldResetCurrentSlide = false;
-                if (IsShown) MoveToSlide(value).GetAwaiter();
+                if (IsShown)
+                {
+                    ApplySelectedWithoutAnimation(value).GetAwaiter();
+                    MoveToSlide(value).GetAwaiter();
+                }
                 else WhenShown(() => CurrentSlideIndex = value);
             }
         }
@@ -99,7 +103,8 @@
 
         async Task OnShown()
         {
-            await ApplySelectedWithoutAnimation(0, 0);
+            if (ShouldResetCurrentSlide == false) return;
+            await ApplySelectedWithoutAnimation(0);
             await PrepareForShiftTo(1);
         }
 
@@ -153,7 +158,7 @@
 
         protected float InternalSlideWidth => SlideWidth ?? ActualWidth;
 
-        public async Task<TView> AddSlide<TView>(TView child) where TView: View
+        public async Task<TView> AddSlide<TView>(TView child) where TView : View
         {
             await SlidesContainer.Add(child);
 
@@ -218,7 +223,7 @@
             }
             else
             {
-                await ApplySelectedWithoutAnimation(index, oldSlideIndex);
+                await ApplySelectedWithoutAnimation(index);
             }
 
             if (actuallyChanged) await SlideChanged.Raise();
@@ -226,7 +231,7 @@
 
         protected virtual Task PrepareForShiftTo(int slideIndex) => Task.CompletedTask;
 
-        async Task ApplySelectedWithoutAnimation(int currentSlideIndex, int oldSlideIndex)
+        async Task ApplySelectedWithoutAnimation(int currentSlideIndex)
         {
             SetPosition(currentSlideIndex);
             await ApplySelectedBullet();
@@ -237,7 +242,7 @@
             currentIndex = currentIndex.LimitMax(CountSlides() + 1 - ConcurrentlyVisibleSlides).LimitMin(0);
 
             var x = XPositionOffset - currentIndex * InternalSlideWidth;
-
+            
             SlidesContainer.X(x);
         }
 
