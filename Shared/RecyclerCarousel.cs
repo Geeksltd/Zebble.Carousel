@@ -16,6 +16,7 @@
     public abstract class RecyclerCarousel<TSource> : Carousel where TSource : class
     {
         bool IsInitialized, IsInitializingSlides = true;
+        bool UpdatingDataSource;
         TSource[] dataSource = new TSource[0];
         string LatestRenderedRange;
         Dictionary<Type, List<View>> SlideRecycleBins = new Dictionary<Type, List<View>>();
@@ -54,24 +55,28 @@
 
             if (!IsInitialized) return;
 
-            while (IsInitializingSlides) await Task.Delay(Animation.OneFrame);
-            IsInitializingSlides = true;
-
-            await UIWorkBatch.Run(async () =>
+            try
             {
-                // Due to a BUG in MoveTo, recycling mechanism fails when changing the data source for the second time
-                // and as we are in hurry to stablize the app, I'm applying this as a temporary fix.
-                await SlidesContainer.ClearChildren(awaitNative: true);
+                while (UpdatingDataSource) await Task.Delay(Animation.OneFrame);
+                UpdatingDataSource = true;
 
-                var toRecycle = OrderedSlides.ToArray();
-                foreach (var slide in toRecycle) await MoveToRecycleBin(slide);
+                await UIWorkBatch.Run(async () =>
+                {
+                    // Due to a BUG in MoveTo, recycling mechanism fails when changing the data source for the second time
+                    // and as we are in hurry to stablize the app, I'm applying this as a temporary fix.
+                    await SlidesContainer.ClearChildren(awaitNative: true);
 
-                AdjustContainerWidth();
+                    var toRecycle = OrderedSlides.ToArray();
+                    foreach (var slide in toRecycle) await MoveToRecycleBin(slide);
 
-                await CreateSufficientSlides();
-                await UpdateBullets();
-                if (ShouldResetCurrentSlide) await ShowFirst(animate: false);
-            });
+                    AdjustContainerWidth();
+
+                    await CreateSufficientSlides();
+                    await UpdateBullets();
+                    if (ShouldResetCurrentSlide) await ShowFirst(animate: false);
+                });
+            }
+            finally { UpdatingDataSource = false; }
         }
 
         async Task UpdateBullets()
@@ -113,10 +118,7 @@
                     await CreateSlide(nextItem);
                 }
             }
-            finally
-            {
-                IsInitializingSlides = false;
-            }
+            finally { IsInitializingSlides = false; }
         }
 
         async Task MoveToRecycleBin(View slide)
