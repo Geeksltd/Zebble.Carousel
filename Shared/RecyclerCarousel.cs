@@ -1,6 +1,7 @@
 ﻿namespace Zebble.Plugin
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -15,16 +16,15 @@
 
     public abstract class RecyclerCarousel<TSource> : Carousel where TSource : class
     {
-        bool IsInitialized, IsInitializingSlides = true;
-        bool UpdatingDataSource;
+        bool IsInitialized, IsInitializingSlides;
         TSource[] dataSource = new TSource[0];
         string LatestRenderedRange;
-        Dictionary<Type, List<View>> SlideRecycleBins = new Dictionary<Type, List<View>>();
+        ConcurrentDictionary<Type, Stack<View>> SlideRecycleBins = new();
         List<View> BulletRecycleBin = new List<View>();
 
         public RecyclerCarousel() => SlideWidthChanged.Event += OnSlideWidthChanged;
 
-        List<View> SlideRecycleBin(Type templateType) => SlideRecycleBins.GetOrAdd(templateType, () => new List<View>());
+        Stack<View> SlideRecycleBin(Type templateType) => SlideRecycleBins.GetOrAdd(templateType, () => new());
 
         /// <summary>
         /// The returned type must implement IRecyclerCarouselSlide<TSource> and have a public constructor.
@@ -53,13 +53,14 @@
         {
             dataSource = data.OrEmpty().ToArray();
 
-            if (!IsInitialized) return;
+            if (IsInitialized == false) return;
+
+            while (IsInitializingSlides) await Task.Delay(Animation.OneFrame);
+
+            IsInitializingSlides = true;
 
             try
             {
-                while (UpdatingDataSource) await Task.Delay(Animation.OneFrame);
-                UpdatingDataSource = true;
-
                 await UIWorkBatch.Run(async () =>
                 {
                     // Due to a BUG in MoveTo, recycling mechanism fails when changing the data source for the second time
@@ -73,10 +74,11 @@
 
                     await CreateSufficientSlides();
                     await UpdateBullets();
+
                     if (ShouldResetCurrentSlide) await ShowFirst(animate: false);
                 });
             }
-            finally { UpdatingDataSource = false; }
+            finally { IsInitializingSlides = false; }
         }
 
         async Task UpdateBullets()
@@ -101,24 +103,18 @@
 
         async Task CreateSufficientSlides()
         {
-            IsInitializingSlides = true;
-
-            try
+            while (true)
             {
-                while (true)
-                {
-                    var created = SlidesContainer.AllChildren.Count;
+                var created = SlidesContainer.AllChildren.Count;
 
-                    var slideX = InternalSlideWidth * created;
-                    if (slideX > ActualWidth + InternalSlideWidth) return;
+                var slideX = InternalSlideWidth * created;
+                if (slideX > ActualWidth + InternalSlideWidth) return;
 
-                    var nextItem = dataSource.ElementAtOrDefault(created);
-                    if (nextItem == null) return;
+                var nextItem = dataSource.ElementAtOrDefault(created);
+                if (nextItem == null) return;
 
-                    await CreateSlide(nextItem);
-                }
+                await UIWorkBatch.Run(() => CreateSlide(nextItem));
             }
-            finally { IsInitializingSlides = false; }
         }
 
         async Task MoveToRecycleBin(View slide)
@@ -129,7 +125,7 @@
             var template = GetTemplate(slide)?.GetType();
 
             if (template != null)
-                SlideRecycleBin(template).Add(slide);
+                SlideRecycleBin(template).Push(slide);
         }
 
         public override async Task OnPreRender()
@@ -145,29 +141,23 @@
             var templateType = GetTemplateType(item.GetType());
             if (templateType == null) return null;
 
-            var bin = SlideRecycleBin(templateType);
+            SlideRecycleBin(templateType).TryPop(out var result);
 
-            var result = bin.FirstOrDefault();
+            if (result != null)
+            {
+                Item(result).Set(item);
+                await result.MoveTo(SlidesContainer);
+                await result.IgnoredAsync(false);
+            }
+            else
+            {
+                var slide = (IRecyclerCarouselSlide<TSource>)templateType.CreateInstance();
+                slide.Item.Set(item);
+                result = await AddSlide((View)slide);
+            }
 
-            await UIWorkBatch.Run(async () =>
-             {
-                 if (result != null)
-                 {
-                     bin.Remove(result);
-                     Item(result).Set(item);
-                     var newX = dataSource.IndexOf(item) * SlideWidth;
-                     result.X(newX);
-                     await result.MoveTo(SlidesContainer);
-                     await result.IgnoredAsync(false);
-                 }
-                 else
-                 {
-                     var slide = (IRecyclerCarouselSlide<TSource>)templateType.CreateInstance();
-                     slide.Item.Set(item);
-                     result = await AddSlide((View)slide);
-                     result.X(result.ActualX);
-                 }
-             });
+            var newX = dataSource.IndexOf(item) * SlideWidth;
+            result.X(newX);
 
             return result;
         }
@@ -242,21 +232,26 @@
 
             while (IsInitializingSlides) await Task.Delay(Animation.OneFrame);
 
-            var min = (slideIndex - 1).LimitMin(0);
-            var max = (min + ConcurrentlyVisibleSlides).LimitMax(dataSource.Length);
-            await RenderSlides(min, max);
+            IsInitializingSlides = true;
+
+            try
+            {
+                var min = (slideIndex - 1).LimitMin(0);
+                var max = (min + ConcurrentlyVisibleSlides).LimitMax(dataSource.Length);
+
+                if (LatestRenderedRange == $"{min}-{max}") return;
+                LatestRenderedRange = $"{min}-{max}";
+
+                await UIWorkBatch.Run(async () =>
+                {
+                    for (var i = min; i <= max; i++)
+                        await RenderSlideAt(i);
+                });
+            }
+            finally { IsInitializingSlides = false; }
         }
 
         public Task<View> GetOrCreateCurrentSlide() => RenderSlideAt(CurrentSlideIndex);
-
-        async Task RenderSlides(int min, int max)
-        {
-            if (LatestRenderedRange == $"{min}-{max}") return;
-            LatestRenderedRange = $"{min}-{max}";
-
-            for (var i = min; i <= max; i++)
-                await RenderSlideAt(i);
-        }
 
         async Task<View> RenderSlideAt(int slideIndex)
         {
@@ -264,6 +259,7 @@
 
             var dataItem = DataSource.ElementAtOrDefault(slideIndex);
             if (dataItem == null) return null;
+
             var neededTemplate = GetTemplateType(dataItem.GetType());
             if (neededTemplate == null) return null;
 
@@ -297,10 +293,7 @@
                 Item(slide.X(slideX)).Set(dataItem);
                 return slide;
             }
-            else
-            {
-                return (await CreateSlide(dataItem))?.X(slideX);
-            }
+            else return await CreateSlide(dataItem);
         }
 
         View GetRecyclableSlide(Type template, bool favourLeft)
