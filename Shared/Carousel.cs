@@ -208,7 +208,8 @@
 
             if (actuallyChanged)
             {
-                await PrepareForShiftTo(index);
+                if (!ShouldResetCurrentSlide)
+                    await PrepareForShiftTo(index).ConfigureAwait(false);
                 currentSlideIndex = index;
                 await SlideChanging.Raise();
             }
