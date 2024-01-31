@@ -137,6 +137,7 @@
             }
 
             MoveToSlide(landOn).RunInParallel();
+            PrepareForShiftTo(GetBestMatchIndex()).RunInParallel();
         }
 
         int GetBestMatchIndex()
