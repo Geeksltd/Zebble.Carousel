@@ -103,7 +103,7 @@
 
         async Task CreateSufficientSlides()
         {
-            while (true)
+            while (!IsDisposing)
             {
                 var created = SlidesContainer.AllChildren.Count;
 
