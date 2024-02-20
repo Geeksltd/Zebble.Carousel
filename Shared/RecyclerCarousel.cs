@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Threading.Tasks;
     using Olive;
@@ -16,6 +17,7 @@
 
     public abstract class RecyclerCarousel<TSource> : Carousel where TSource : class
     {
+        DateTime LastWaiter;
         bool IsInitialized, IsInitializingSlides;
         TSource[] dataSource = new TSource[0];
         string LatestRenderedRange;
@@ -65,7 +67,7 @@
                 {
                     // Due to a BUG in MoveTo, recycling mechanism fails when changing the data source for the second time
                     // and as we are in hurry to stablize the app, I'm applying this as a temporary fix.
-                    await SlidesContainer.ClearChildren(awaitNative: true);
+                    await SlidesContainer.ClearChildren();
 
                     var toRecycle = OrderedSlides.ToArray();
                     foreach (var slide in toRecycle) await MoveToRecycleBin(slide);
@@ -103,7 +105,9 @@
 
         async Task CreateSufficientSlides()
         {
-            while (!IsDisposing)
+            var count = 0;
+
+            while (!IsDisposing && count < 10)
             {
                 var created = SlidesContainer.AllChildren.Count;
 
@@ -114,6 +118,7 @@
                 if (nextItem == null) return;
 
                 await UIWorkBatch.Run(() => CreateSlide(nextItem));
+                count++;
             }
         }
 
@@ -202,6 +207,7 @@
             if (result == null)
             {
                 // How?
+                Debug.WriteLine("GetTemplate() returned null!!!");
             }
 
             return result;
@@ -230,7 +236,20 @@
         {
             if (dataSource.None()) return;
 
-            while (IsInitializingSlides) await Task.Delay(Animation.OneFrame);
+            var myTimestamp = LastWaiter = DateTime.UtcNow;
+
+            for (var attempts = 400; attempts > 0; attempts--)
+            {
+                if (LastWaiter != myTimestamp)
+                    return;
+                if (IsInitializingSlides)
+                {
+                    Debug.WriteLine("Attempt " + attempts);
+                    await Task.Delay(Animation.OneFrame).ConfigureAwait(false);
+                }
+                else
+                    break;
+            }
 
             IsInitializingSlides = true;
 
@@ -242,14 +261,12 @@
                 if (LatestRenderedRange == $"{min}-{max}") return;
                 LatestRenderedRange = $"{min}-{max}";
 
-                await UIWorkBatch.Run(async () =>
-                {
-                    for (var i = min; i <= max; i++)
-                        await RenderSlideAt(i);
-                });
+                for (var i = min; i <= max; i++)
+                    await RenderSlideAt(i);
             }
             finally { IsInitializingSlides = false; }
         }
+
 
         public Task<View> GetOrCreateCurrentSlide() => RenderSlideAt(CurrentSlideIndex);
 

@@ -117,7 +117,8 @@
             if (Math.Abs(verticalDifference) > Math.Abs(horizontalDifference))
                 return;
             SlidesContainer.X(SlidesContainer.X.CurrentValue - horizontalDifference);
-            PrepareForShiftTo(GetBestMatchIndex()).RunInParallel();
+
+            Thread.Pool.Run(() => PrepareForShiftTo(GetBestMatchIndex()));
         }
 
         public int ConcurrentlyVisibleSlides => (int)Math.Ceiling(ActualWidth / InternalSlideWidth);
@@ -136,8 +137,7 @@
                 else landOn = (int)Math.Ceiling(position);
             }
 
-            MoveToSlide(landOn).RunInParallel();
-            PrepareForShiftTo(GetBestMatchIndex()).RunInParallel();
+            Thread.Pool.Run(() => MoveToSlide(landOn).ContinueWith(v => PrepareForShiftTo(GetBestMatchIndex()))).RunInParallel();
         }
 
         int GetBestMatchIndex()
@@ -233,10 +233,10 @@
 
         protected virtual Task PrepareForShiftTo(int slideIndex) => Task.CompletedTask;
 
-        async Task ApplySelectedWithoutAnimation(int currentSlideIndex)
+        Task ApplySelectedWithoutAnimation(int currentSlideIndex)
         {
             SetPosition(currentSlideIndex);
-            await ApplySelectedBullet();
+            return ApplySelectedBullet();
         }
 
         protected void SetPosition(int currentIndex)
