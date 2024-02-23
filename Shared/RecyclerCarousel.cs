@@ -303,7 +303,9 @@
 
             if (slide != null) return slide;
 
-            slide = GetRecyclableSlide(neededTemplate, favourLeft: slideIndex > CurrentSlideIndex);
+            var keep = new Range<float>((slideX.Value - SlideWidth.Value).LimitMin(0), slideX.Value + SlideWidth.Value);
+
+            slide = GetRecyclableSlide(neededTemplate, keep);
 
             if (slide != null)
             {
@@ -313,24 +315,13 @@
             else return await CreateSlide(dataItem);
         }
 
-        View GetRecyclableSlide(Type template, bool favourLeft)
+        View GetRecyclableSlide(Type template, Range<float> needed)
         {
-            View fromLeft()
-            {
-                var farLeft = OrderedSlides.FirstOrDefault(x => GetTemplate(x)?.GetType() == template);
-                var keepDownTo = -SlidesContainer.X.CurrentValue - InternalSlideWidth;
-                return farLeft?.ActualX < keepDownTo ? farLeft : null;
-            }
+            var mid = needed.From + (needed.To - needed.From) / 2;
 
-            View fromRight()
-            {
-                var farRight = OrderedSlides.LastOrDefault(x => GetTemplate(x)?.GetType() == template);
-                var keepUpTo = InternalSlideWidth * ConcurrentlyVisibleSlides - SlidesContainer.X.CurrentValue;
-                return farRight?.ActualX > keepUpTo ? farRight : null;
-            }
-
-            if (favourLeft) return fromLeft() ?? fromRight();
-            else return fromRight() ?? fromLeft();
+            return OrderedSlides
+                .Where(x => x.ActualX < needed.From - SlideWidth || x.ActualX > needed.To)
+                .WithMax(x => Math.Abs(mid - (x.ActualX + SlideWidth.Value / 2)));
         }
 
         public override int CountSlides() => dataSource.Length;
