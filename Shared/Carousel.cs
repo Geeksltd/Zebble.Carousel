@@ -142,7 +142,6 @@
 
         int GetBestMatchIndex()
         {
-            var a = Zebble.Thread.UI.IsRunning();
             var result = -(int)Math.Round((SlidesContainer.ActualX - XPositionOffset) / InternalSlideWidth);
             return result.LimitMin(0).LimitMax(CountSlides() - 1);
         }
