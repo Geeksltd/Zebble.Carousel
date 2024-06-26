@@ -137,11 +137,12 @@
                 else landOn = (int)Math.Ceiling(position);
             }
 
-            Thread.Pool.Run(() => MoveToSlide(landOn).ContinueWith(v => PrepareForShiftTo(GetBestMatchIndex()))).RunInParallel();
+            Thread.Pool.Run(() => MoveToSlide(landOn)).RunInParallel();
         }
 
         int GetBestMatchIndex()
         {
+            var a = Zebble.Thread.UI.IsRunning();
             var result = -(int)Math.Round((SlidesContainer.ActualX - XPositionOffset) / InternalSlideWidth);
             return result.LimitMin(0).LimitMax(CountSlides() - 1);
         }
@@ -209,8 +210,7 @@
 
             if (actuallyChanged)
             {
-                if (!ShouldResetCurrentSlide)
-                    await PrepareForShiftTo(index).ConfigureAwait(false);
+                await PrepareForShiftTo(index).ConfigureAwait(false);
                 currentSlideIndex = index;
                 await SlideChanging.Raise();
             }
