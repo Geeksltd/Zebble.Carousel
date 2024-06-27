@@ -137,7 +137,7 @@
                 else landOn = (int)Math.Ceiling(position);
             }
 
-            Thread.Pool.Run(() => MoveToSlide(landOn).ContinueWith(v => PrepareForShiftTo(GetBestMatchIndex()))).RunInParallel();
+            Thread.Pool.Run(() => MoveToSlide(landOn)).RunInParallel();
         }
 
         int GetBestMatchIndex()
@@ -209,8 +209,7 @@
 
             if (actuallyChanged)
             {
-                if (!ShouldResetCurrentSlide)
-                    await PrepareForShiftTo(index).ConfigureAwait(false);
+                await PrepareForShiftTo(index).ConfigureAwait(false);
                 currentSlideIndex = index;
                 await SlideChanging.Raise();
             }
